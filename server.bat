@@ -1,0 +1,1 @@
+net\Scripts\activate && cd net\src && python server.py
