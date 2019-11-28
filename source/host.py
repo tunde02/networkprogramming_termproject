@@ -1,8 +1,21 @@
 import socket
 import cv2
 import numpy
+import keyboard
 from PIL import ImageGrab
 from threading import Thread
+
+def recv_control(sock):
+    while True:
+        data = sock.recv(1024)
+        msg = data.decode()
+
+        if msg == "FINISHED":
+            print("terminated")
+            sock.close()
+            break
+
+        print('Received : {}'.format(msg))
 
 def screen_send_thread(sock):
     while True:
@@ -22,5 +35,20 @@ def screen_send_thread(sock):
 if __name__ == "__main__":
     sock = socket.socket()
     sock.connect(("127.0.0.1", 1080))
+    sock.sendall("host".encode())
 
-    print("host")
+    print("waiting key s")
+    keyboard.wait("s")
+
+    sock.sendall("s".encode())
+
+    t1 = Thread(target=screen_send_thread, args=[sock])
+    t2 = Thread(target=recv_control, args=[sock])
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+    print("host end")
