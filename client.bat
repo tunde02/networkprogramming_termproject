@@ -1,0 +1,1 @@
+net\Scripts\activate && cd source && python client.py
