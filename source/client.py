@@ -41,7 +41,7 @@ class MouseDetector:
     def __init__(self, sock):
         self.sock = sock
         self.listener = mouse.Listener(
-            # on_move=self.on_move,
+            on_move=self.on_move,
             on_click=self.on_click,
             on_scroll=self.on_scroll
         )
@@ -51,6 +51,7 @@ class MouseDetector:
     def on_move(self, x, y):
         data = "MOUSE|" + str(x) + "," + str(y) + "|MOVE"
         self.sock.sendall(data.encode())
+        time.sleep(0.001)
         print(data)
 
     def on_click(self, x, y, button, pressed):
@@ -130,8 +131,7 @@ def esc_pressed():
 
 if __name__ == '__main__':
     sock = socket.socket()
-    sock.connect(("127.0.0.1", 1080))
-
+    sock.connect(("192.168.0.11", 1080))
     sock.sendall("client".encode())
 
     while True:
