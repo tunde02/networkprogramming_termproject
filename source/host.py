@@ -3,8 +3,52 @@ import cv2
 import numpy
 import keyboard as k
 from pynput import keyboard, mouse
+from pynput.keyboard import Key
 from PIL import ImageGrab
 from threading import Thread
+
+keyDict = {
+    "Key.space": Key.space, 
+    "Key.alt_l": Key.alt_l,
+    "Key.alt_r": Key.alt_r,
+    "Key.backspace": Key.backspace,
+    "Key.caps_lock": Key.caps_lock,
+    "Key.cmd": Key.cmd,
+    "Key.ctrl_l": Key.ctrl_l,
+    "Key.ctrl_r": Key.ctrl_r,
+    "Key.delete": Key.delete,
+    "Key.down": Key.down,
+    "Key.end": Key.end,
+    "Key.enter": Key.enter,
+    "Key.esc": Key.esc,
+    "Key.f1": Key.f1,
+    "Key.f2": Key.f2,
+    "Key.f3": Key.f3,
+    "Key.f4": Key.f4,
+    "Key.f5": Key.f5,
+    "Key.f6": Key.f6,
+    "Key.f7": Key.f7,
+    "Key.f8": Key.f8,
+    "Key.f9": Key.f9,
+    "Key.f10": Key.f10,
+    "Key.f11": Key.f11,
+    "Key.f12": Key.f12,
+    "Key.home": Key.home,
+    "Key.left": Key.left,
+    "Key.page_down": Key.page_down,
+    "Key.page_up": Key.page_up,
+    "Key.right": Key.right,
+    "Key.shift_l": Key.shift_l,
+    "Key.shift_r": Key.shift_r,
+    "Key.space": Key.space,
+    "Key.tab": Key.tab,
+    "Key.up": Key.up,
+    "Key.insert": Key.insert,
+    "Key.num_lock": Key.num_lock,
+    "Key.pause": Key.pause,
+    "Key.print_screen": Key.print_screen,
+    "Key.scroll_lock": Key.scroll_lock
+}
 
 def recv_control(sock):
     keyController = keyboard.Controller()
@@ -21,11 +65,15 @@ def recv_control(sock):
 
         if msg[0] == "KEYBOARD":
             if msg[2] == "PRESS":
-                # print("KEYBOARD|{}|PRESS".format(msg[1]))
-                keyController.press(msg[1])
+                if len(msg[1]) == 1:
+                    keyController.press(msg[1])
+                else:
+                    keyController.press(keyDict[msg[1]])
             elif msg[2] == "RELEASE":
-                # print("KEYBOARD|{}|RELEASE".format(msg[1]))
-                keyController.release(msg[1])
+                if len(msg[1]) == 1:
+                    keyController.release(msg[1])
+                else:
+                    keyController.release(keyDict[msg[1]])
         elif msg[0] == "MOUSE":
             if msg[1] == "LMB":
                 if msg[2] == "PRESS":
@@ -40,14 +88,14 @@ def recv_control(sock):
                     mouseController.press(mouse.Button.right)
                 elif msg[2] == "RELEASE":
                     # print("MOUSE|{}|RELEASE".format(msg[1]))
-                    mouseController.release(mouse.Button.left)
+                    mouseController.release(mouse.Button.right)
             elif msg[1] == "SCROLL":
                 if msg[2] == "UP":
                     # print("MOUSE|{}|UP".format(msg[1]))
-                    mouseController.scroll(0, 2)
+                    mouseController.scroll(0, 1)
                 elif msg[2] == "DOWN":
                     # print("MOUSE|{}|DOWN".format(msg[1]))
-                    mouseController.scroll(0, -2)
+                    mouseController.scroll(0, -1)
             else:
                 mouseController.position = msg[1].split(",")[0], msg[1].split(",")[1]
 
@@ -55,9 +103,8 @@ def recv_control(sock):
 
 def screen_send_thread(sock):
     while True:
-        imgGrab = ImageGrab.grab(bbox=(480, 100, 1170, 724))
+        imgGrab = ImageGrab.grab(bbox=(0, 0, 1920, 1080))
         cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
-
         #추출한 이미지를 String 형태로 변환(인코딩)시키는 과정
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
         result, imgencode = cv2.imencode('.jpg', cv_img, encode_param)
@@ -70,7 +117,7 @@ def screen_send_thread(sock):
 
 if __name__ == "__main__":
     sock = socket.socket()
-    sock.connect(("127.0.0.1", 1080))
+    sock.connect(("192.168.0.11", 1080))
     sock.sendall("host".encode())
 
     print("waiting key s")
