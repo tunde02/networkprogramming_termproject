@@ -1,21 +1,55 @@
 import socket
 import cv2
 import numpy
-import keyboard
+import keyboard as k
+from pynput import keyboard, mouse
 from PIL import ImageGrab
 from threading import Thread
 
 def recv_control(sock):
+    keyController = keyboard.Controller()
+    mouseController = mouse.Controller()
+
     while True:
         data = sock.recv(1024)
-        msg = data.decode()
+        msg = data.decode().split('|')
 
-        if msg == "FINISHED":
-            print("terminated")
+        if msg[0] == "FINISHED":
+            print("host terminated")
             sock.close()
             break
 
-        print('Received : {}'.format(msg))
+        if msg[0] == "KEYBOARD":
+            if msg[2] == "PRESS":
+                # print("KEYBOARD|{}|PRESS".format(msg[1]))
+                keyController.press(msg[1])
+            elif msg[2] == "RELEASE":
+                # print("KEYBOARD|{}|RELEASE".format(msg[1]))
+                keyController.release(msg[1])
+        elif msg[0] == "MOUSE":
+            if msg[1] == "LMB":
+                if msg[2] == "PRESS":
+                    # print("MOUSE|{}|PRESS".format(msg[1]))
+                    mouseController.press(mouse.Button.left)
+                elif msg[2] == "RELEASE":
+                    # print("MOUSE|{}|RELEASE".format(msg[1]))
+                    mouseController.release(mouse.Button.left)
+            elif msg[1] == "RMB":
+                if msg[2] == "PRESS":
+                    # print("MOUSE|{}|PRESS".format(msg[1]))
+                    mouseController.press(mouse.Button.right)
+                elif msg[2] == "RELEASE":
+                    # print("MOUSE|{}|RELEASE".format(msg[1]))
+                    mouseController.release(mouse.Button.left)
+            elif msg[1] == "SCROLL":
+                if msg[2] == "UP":
+                    # print("MOUSE|{}|UP".format(msg[1]))
+                    mouseController.scroll(0, 2)
+                elif msg[2] == "DOWN":
+                    # print("MOUSE|{}|DOWN".format(msg[1]))
+                    mouseController.scroll(0, -2)
+
+        print('Received : {}'.format(data.decode()))
 
 def screen_send_thread(sock):
     while True:
@@ -38,7 +72,7 @@ if __name__ == "__main__":
     sock.sendall("host".encode())
 
     print("waiting key s")
-    keyboard.wait("s")
+    k.wait("s")
 
     sock.sendall("s".encode())
 

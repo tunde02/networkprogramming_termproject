@@ -6,30 +6,6 @@ import time
 from pynput import keyboard, mouse
 from threading import Thread
 
-'''
-class KeyDetector:
-    key = ""
-    sock = None
-
-    def __init__(self, sock):
-        self.sock = sock
-        keyboard.on_press(self.send_pressed_key)
-        keyboard.on_release(self.send_released_key)
-        print("key detector registered")
-
-    def send_pressed_key(self, e):
-        self.key = e.name
-        data = str(self.key + " pressed")
-        self.sock.sendall(data.encode())
-        print(data)
-
-    def send_released_key(self, e):
-        self.key = e.name
-        data = str(self.key + " released")
-        self.sock.sendall(data.encode())
-        print(data)
-'''
-
 class KeyDetector:
     sock = None
     listener = None
@@ -41,40 +17,22 @@ class KeyDetector:
         print("key detector registered")
 
     def on_press(self, key):
-        data = str(key) + " pressed"
+        try:
+            data = "KEYBOARD|" + key.char + "|PRESS"
+        except AttributeError:
+            data = "KEYBOARD|" + str(key) + "|PRESS"
+
         self.sock.sendall(data.encode())
         print(data)
 
     def on_release(self, key):
-        data = str(key) + " released"
+        try:
+            data = "KEYBOARD|" + key.char + "|RELEASE"
+        except AttributeError:
+            data = "KEYBOARD|" + str(key) + "|RELEASE"
+
         self.sock.sendall(data.encode())
         print(data)
-
-'''
-class MouseDetector:
-    mousesePos = (0, 0)
-    sock = None
-
-    def __init__(self, sock):
-        self.mousesePos = pg.position()
-        self.sock = sock
-        t = Thread(target=self.detect_mousese_position)
-        t.start()
-        print("mousese detector registered")
-
-    def detect_mousese_position(self):
-        while True:
-            currentPos = pg.position()
-            diff = max([abs(self.mousesePos[0] - currentPos[0]), abs(self.mousesePos[1] - currentPos[1])])
-
-            if currentPos == (0, 0):
-                break
-
-            if diff > 25:
-                self.mousesePos = currentPos
-                self.sock.sendall(str(self.mousesePos).encode())
-                print('mousese position : ({0}, {1})'.format(self.mousesePos[0], self.mousesePos[1]))
-'''
 
 class MouseDetector:
     sock = None
@@ -96,28 +54,28 @@ class MouseDetector:
         print("mousese position : " + data)
 
     def on_click(self, x, y, button, pressed):
-        data = str((x, y))
+        data = ""
 
         if button == mouse.Button.left:
-            data += " Left mousese Button"
+            data += "MOUSE|LMB"
         elif button == mouse.Button.right:
-            data += " Right mousese Button"
+            data += "MOUSE|RMB"
 
         if pressed:
-            data += " Pressed"
+            data += "|PRESS"
         else:
-            data += " Released"
+            data += "|RELEASE"
 
         self.sock.sendall(data.encode())
         print(data)
 
     def on_scroll(self, x, y, dx, dy):
-        data = "mousese Scrolled "
+        data = "MOUSE|SCROLL"
 
         if dy < 0:
-            data += "Down"
+            data += "|DOWN"
         else:
-            data += "Up"
+            data += "|UP"
 
         self.sock.sendall(data.encode())
         print(data)

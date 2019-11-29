@@ -55,7 +55,8 @@ class ClientHandler:
                 print("terminated")
                 self.sock.close()
                 break
-            elif msg[1] == "h":
+            elif msg == "KEYBOARD|h|PRESS":
+                self.sock.recv(self.BUFSIZE) # eat release listener
                 print("match client to host")
                 self.match_host()
                 break
@@ -70,9 +71,10 @@ class ClientHandler:
 
             if msg == self.terminator:
                 print("terminated")
+                self.host.sendall("FINISHED".encode())
                 self.sock.close()
                 break
-            print("send client's msg to host")
+            # print("send client's msg to host")
             self.host.sendall(data)
 
 class HostHandler:
