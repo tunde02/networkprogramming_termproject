@@ -49,9 +49,9 @@ class MouseDetector:
         print("mousese detector registered")
     
     def on_move(self, x, y):
-        data = str((x, y))
+        data = "MOUSE|" + str(x) + "," + str(y) + "|MOVE"
         self.sock.sendall(data.encode())
-        print("mousese position : " + data)
+        print(data)
 
     def on_click(self, x, y, button, pressed):
         data = ""

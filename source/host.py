@@ -48,6 +48,8 @@ def recv_control(sock):
                 elif msg[2] == "DOWN":
                     # print("MOUSE|{}|DOWN".format(msg[1]))
                     mouseController.scroll(0, -2)
+            else:
+                mouseController.position = msg[1].split(",")[0], msg[1].split(",")[1]
 
         print('Received : {}'.format(data.decode()))
 
