@@ -3,7 +3,7 @@ import keyboard
 from threading import Thread
 
 
-def run_server(ip='192.168.0.11', port=1080):
+def run_server(ip='127.0.0.1', port=1080):
     with socket.socket() as sock:
         sock.bind((ip, port))
 

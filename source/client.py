@@ -5,6 +5,7 @@ import keyboard as k
 import time
 from pynput import keyboard, mouse
 from threading import Thread
+import client_gui
 
 
 class KeyDetector:
@@ -79,6 +80,7 @@ class MouseDetector:
 class ImageReceiver:
     def __init__(self, sock):
         self.sock = sock
+        self.isConnected = True
 
         t = Thread(target=self.recv_image)
         t.start()
@@ -86,10 +88,13 @@ class ImageReceiver:
 
     def recv_image(self):
         while True:
+            # if self.isConnected == False:
+            #     break
+
             # String형의 이미지를 수신받아서 이미지로 변환 하고 화면에 출력
             length = self.recv_all(16)
 
-            if length == None:
+            if len(length) == 0:
                 print("recv_image : break")
                 break
 
@@ -109,7 +114,10 @@ class ImageReceiver:
         buffer = b''
 
         while count:
-            temp = self.sock.recv(count)
+            try:
+                temp = self.sock.recv(count)
+            except ConnectionAbortedError:
+                break
 
             if not temp:
                 return None
@@ -119,6 +127,9 @@ class ImageReceiver:
 
         return buffer
 
+    def stop_recv(self):
+        self.isConnected = False
+
 
 def esc_pressed():
     k.wait('esc')
@@ -126,30 +137,89 @@ def esc_pressed():
     exit()
 
 
-if __name__ == '__main__':
-    sock = socket.socket()
-    sock.connect(("192.168.0.11", 1080))
-    sock.sendall("client".encode())
-
-    k.wait('b')
-
+def register_funcs(sock):
     key_detector = KeyDetector(sock)
     mouse_detector = MouseDetector(sock)
     image_receiver = ImageReceiver(sock)
 
-    # t = Thread(target=esc_pressed)
-    # t.start()
-
     print("register finished")
+    return key_detector, mouse_detector, image_receiver
 
-    # t.join()
 
-    k.wait('esc')
+def start_gui():
+    print("start gui")
+    connection_window = client_gui.ClientGUI()
+    connection_window.connect_btn.config(command=lambda: connect_to(connection_window))
+    connection_window.start_window()
 
-    sock.sendall("FINISHED".encode())
+
+def connect_to(connection_window):
+    print("client connect to server")
+
+    ip = connection_window.ip_entry.get()
+    port = int(connection_window.port_entry.get())
+    # print("ip : {}, port : {}".format(ip, port))
+
+    sock = socket.socket()
+    sock.connect((ip, port))
+
+    sock.sendall("client".encode())
+
+    key_detector, mouse_detector, image_receiver = register_funcs(sock)
+
+    connection_window.close_window()
+
+    list_window = client_gui.GameListGUI(ip, port)
+    list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock, key_detector, mouse_detector, image_receiver))
+    list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock, key_detector, mouse_detector, image_receiver))
+    list_window.quit_btn.config(command=lambda: (disconnect(list_window, sock, key_detector, mouse_detector, image_receiver)))
+    list_window.start_window()
+
+
+def disconnect(list_window, sock, key_detector, mouse_detector, image_receiver):
     key_detector.listener.stop()
     mouse_detector.listener.stop()
+    image_receiver.stop_recv()
 
+    sock.sendall("FINISHED".encode())
     sock.close()
 
-    print("client end")
+    print("disconnected")
+
+    list_window.close_window()
+
+    start_gui()
+
+
+if __name__ == '__main__':
+    # connection_window = client_gui.ClientGUI()
+    # connection_window.connect_btn.config(command=connect_to)
+    # connection_window.start_window()
+    start_gui()
+
+    # sock = socket.socket()
+    # sock.connect(("192.168.0.11", 1080))
+    # sock.sendall("client".encode())
+
+    # k.wait('b')
+
+    # key_detector = KeyDetector(sock)
+    # mouse_detector = MouseDetector(sock)
+    # image_receiver = ImageReceiver(sock)
+
+    # # t = Thread(target=esc_pressed)
+    # # t.start()
+
+    # print("register finished")
+
+    # # t.join()
+
+    # k.wait('esc')
+
+    # sock.sendall("FINISHED".encode())
+    # key_detector.listener.stop()
+    # mouse_detector.listener.stop()
+
+    # sock.close()
+
+    # print("client end")
