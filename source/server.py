@@ -15,7 +15,6 @@ def runServer(connects, ip='192.168.0.11', port=1080):
         while True:
             sock.listen(3)
             conn, addr = sock.accept()
-            print("client accessed")
             # connects.append(clntSock)
 
             sockType = conn.recv(10)
@@ -79,6 +78,7 @@ class ClientHandler:
 
 class HostHandler:
     BUFSIZE = 1024
+    terminator = "FINISHED"
     clnts = []
 
     def __init__(self, sock, addr):
@@ -105,7 +105,11 @@ class HostHandler:
             length = self.recv_image(16)
 
             if length == None:
-                print("deliver_image lenght is None break")
+                print("deliver_image length is None break")
+                break
+            elif length.decode() == "FINISHED":
+                print("host terminated")
+                self.sock.close()
                 break
 
             stringData = self.recv_image(int(length))

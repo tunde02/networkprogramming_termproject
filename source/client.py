@@ -17,19 +17,21 @@ class KeyDetector:
         print("key detector registered")
 
     def on_press(self, key):
-        try:
-            data = "KEYBOARD|" + key.char + "|PRESS"
-        except AttributeError:
-            data = "KEYBOARD|" + str(key) + "|PRESS"
+        data = "KEYBOARD|" + str(key) + "|PRESS"
+        # try:
+        #     data = "KEYBOARD|" + key.char + "|PRESS"
+        # except AttributeError:
+        #     data = "KEYBOARD|" + str(key) + "|PRESS"
 
         self.sock.sendall(data.encode())
         print(data)
 
     def on_release(self, key):
-        try:
-            data = "KEYBOARD|" + key.char + "|RELEASE"
-        except AttributeError:
-            data = "KEYBOARD|" + str(key) + "|RELEASE"
+        data = "KEYBOARD|" + str(key) + "|RELEASE"
+        # try:
+        #     data = "KEYBOARD|" + key.char + "|RELEASE"
+        # except AttributeError:
+        #     data = "KEYBOARD|" + str(key) + "|RELEASE"
 
         self.sock.sendall(data.encode())
         print(data)
@@ -51,8 +53,8 @@ class MouseDetector:
     def on_move(self, x, y):
         data = "MOUSE|" + str(x) + "," + str(y) + "|MOVE"
         self.sock.sendall(data.encode())
-        time.sleep(0.001)
-        print(data)
+        time.sleep(0.005)
+        # print(data)
 
     def on_click(self, x, y, button, pressed):
         data = ""

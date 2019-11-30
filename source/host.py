@@ -2,6 +2,7 @@ import socket
 import cv2
 import numpy
 import keyboard as k
+import pyautogui as pg
 from pynput import keyboard, mouse
 from pynput.keyboard import Key
 from PIL import ImageGrab
@@ -58,6 +59,9 @@ def recv_control(sock):
         data = sock.recv(1024)
         msg = data.decode().split('|')
 
+        if msg[2] != "MOVE":
+            print('Received : {} {} {}'.format(msg[0], msg[1], msg[2]))
+
         if msg[0] == "FINISHED":
             print("host terminated")
             sock.close()
@@ -66,14 +70,26 @@ def recv_control(sock):
         if msg[0] == "KEYBOARD":
             if msg[2] == "PRESS":
                 if len(msg[1]) == 1:
-                    keyController.press(msg[1])
+                    # keyController.press(msg[1])
+                    pg.keyDown(msg[1])
+                elif msg[1] == "<21>":
+                    pg.keyDown("hanguel")
+                elif msg[1] == "<25>":
+                    pg.keyDown("hanja")
                 else:
                     keyController.press(keyDict[msg[1]])
+                    # pg.keyDown(msg[1][4:len(msg[1]) - 1])
             elif msg[2] == "RELEASE":
                 if len(msg[1]) == 1:
-                    keyController.release(msg[1])
+                    # keyController.release(msg[1])
+                    pg.keyUp(msg[1])
+                elif msg[1] == "<21>":
+                    pg.keyUp("hanguel")
+                elif msg[1] == "<25>":
+                    pg.keyUp("hanja")
                 else:
                     keyController.release(keyDict[msg[1]])
+                    # pg.keyUp(msg[1][4:len(msg[1]) - 1])
         elif msg[0] == "MOUSE":
             if msg[1] == "LMB":
                 if msg[2] == "PRESS":
@@ -98,8 +114,6 @@ def recv_control(sock):
                     mouseController.scroll(0, -1)
             else:
                 mouseController.position = msg[1].split(",")[0], msg[1].split(",")[1]
-
-        print('Received : {}'.format(data.decode()))
 
 def screen_send_thread(sock):
     while True:
