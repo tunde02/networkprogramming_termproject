@@ -65,9 +65,10 @@ keyDict = {
     "Key.menu": Key.menu
 }
 
+
 def recv_control(sock):
-    keyController = keyboard.Controller()
-    mouseController = mouse.Controller()
+    key_controller = keyboard.Controller()
+    mouse_controller = mouse.Controller()
 
     while True:
         data = sock.recv(1024)
@@ -84,40 +85,42 @@ def recv_control(sock):
         if msg[0] == "KEYBOARD":
             if msg[2] == "PRESS":
                 if len(msg[1]) == 3: 
-                    keyController.press(msg[1][1])
+                    key_controller.press(msg[1][1])
                 elif msg[1] == "<21>":
                     pg.keyDown("hanguel")
                 elif msg[1] == "<25>":
                     pg.keyDown("hanja")
                 else:
-                    keyController.press(keyDict[msg[1]])
+                    key_controller.press(keyDict[msg[1]])
             elif msg[2] == "RELEASE":
                 if len(msg[1]) == 3:
-                    keyController.release(msg[1][1])
+                    key_controller.release(msg[1][1])
                 elif msg[1] == "<21>":
                     pg.keyUp("hanguel")
                 elif msg[1] == "<25>":
                     pg.keyUp("hanja")
                 else:
-                    keyController.release(keyDict[msg[1]])
+                    key_controller.release(keyDict[msg[1]])
+
         elif msg[0] == "MOUSE":
             if msg[1] == "LMB":
                 if msg[2] == "PRESS":
-                    mouseController.press(mouse.Button.left)
+                    mouse_controller.press(mouse.Button.left)
                 elif msg[2] == "RELEASE":
-                    mouseController.release(mouse.Button.left)
+                    mouse_controller.release(mouse.Button.left)
             elif msg[1] == "RMB":
                 if msg[2] == "PRESS":
-                    mouseController.press(mouse.Button.right)
+                    mouse_controller.press(mouse.Button.right)
                 elif msg[2] == "RELEASE":
-                    mouseController.release(mouse.Button.right)
+                    mouse_controller.release(mouse.Button.right)
             elif msg[1] == "SCROLL":
                 if msg[2] == "UP":
-                    mouseController.scroll(0, 1)
+                    mouse_controller.scroll(0, 3)
                 elif msg[2] == "DOWN":
-                    mouseController.scroll(0, -1)
+                    mouse_controller.scroll(0, -3)
             else:
-                mouseController.position = msg[1].split(",")[0], msg[1].split(",")[1]
+                mouse_controller.position = msg[1].split(",")[0], msg[1].split(",")[1]
+
 
 def screen_send_thread(sock):
     while True:
@@ -138,6 +141,7 @@ def screen_send_thread(sock):
         sock.send(str(len(stringData)).ljust(16).encode())
         sock.send(stringData)
 
+
 if __name__ == "__main__":
     sock = socket.socket()
     sock.connect(("192.168.0.11", 1080))
@@ -147,6 +151,8 @@ if __name__ == "__main__":
     k.wait("s")
 
     sock.sendall("s".encode())
+
+    # t1, t2 to "start_connection" function
 
     t1 = Thread(target=screen_send_thread, args=[sock])
     t2 = Thread(target=recv_control, args=[sock])

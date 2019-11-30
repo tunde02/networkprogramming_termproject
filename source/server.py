@@ -1,10 +1,9 @@
 import socket
 import keyboard
-import cv2
-import numpy
 from threading import Thread
 
-def runServer(connects, ip='192.168.0.11', port=1080):
+
+def run_server(ip='192.168.0.11', port=1080):
     with socket.socket() as sock:
         sock.bind((ip, port))
 
@@ -17,21 +16,22 @@ def runServer(connects, ip='192.168.0.11', port=1080):
             conn, addr = sock.accept()
             # connects.append(clntSock)
 
-            sockType = conn.recv(10)
+            sock_type = conn.recv(10)
 
-            if sockType.decode() == "client":
+            if sock_type.decode() == "client":
                 print("client accessed")
-                newClnt = ClientHandler(sock=conn, addr=addr)
+                new_clnt = ClientHandler(sock=conn, addr=addr)
                 clnts.append(conn)
-                newClnt.hosts = hosts
+                new_clnt.hosts = hosts
             else:
                 print("host accessed")
-                newHost = HostHandler(sock=conn, addr=addr)
+                new_host = HostHandler(sock=conn, addr=addr)
                 hosts.append(conn)
-                newHost.clnts = clnts
+                new_host.clnts = clnts
 
         print("Server end")
         sock.close()
+
 
 class ClientHandler:
     BUFSIZE = 1024
@@ -41,6 +41,7 @@ class ClientHandler:
     def __init__(self, sock, addr):
         self.sock = sock
         self.addr = addr
+        self.host = None
 
         t = Thread(target=self.deliver_msg)
         t.start()
@@ -63,7 +64,7 @@ class ClientHandler:
             # self.host.sendall(data)
 
     def match_host(self):
-        self.host  = self.hosts[0]
+        self.host = self.hosts[0]
         while True:
             data = self.sock.recv(self.BUFSIZE)
             msg = data.decode()
@@ -76,6 +77,7 @@ class ClientHandler:
             # print("send client's msg to host")
             self.host.sendall(data)
 
+
 class HostHandler:
     BUFSIZE = 1024
     terminator = "FINISHED"
@@ -84,6 +86,7 @@ class HostHandler:
     def __init__(self, sock, addr):
         self.sock = sock
         self.addr = addr
+        self.client = None
 
         t = Thread(target=self.recv_host)
         t.start()
@@ -101,10 +104,10 @@ class HostHandler:
 
     def deliver_image(self):
         while True:
-            #String형의 이미지를 수신받아서 이미지로 변환하고 화면에 출력
+            # String형의 이미지를 수신받아서 이미지로 변환하고 화면에 출력
             length = self.recv_image(16)
 
-            if length == None:
+            if length is None:
                 print("deliver_image length is None break")
                 break
             elif length.decode() == "FINISHED":
@@ -112,10 +115,10 @@ class HostHandler:
                 self.sock.close()
                 break
 
-            stringData = self.recv_image(int(length))
+            string_data = self.recv_image(int(length))
             # host와 연결된 client에게 그대로 보냄
-            self.client.send(str(len(stringData)).ljust(16).encode())
-            self.client.send(stringData)
+            self.client.send(str(len(string_data)).ljust(16).encode())
+            self.client.send(string_data)
 
     def recv_image(self, count):
         buffer = b''
@@ -131,15 +134,16 @@ class HostHandler:
 
         return buffer
 
+
 def esc_pressed():
     keyboard.wait('esc')
+
 
 if __name__ == '__main__':
     t = Thread(target=esc_pressed)
     t.start()
 
-    connects = []
-    runServer(connects)
+    run_server()
 
     t.join()
 

@@ -6,6 +6,7 @@ import time
 from pynput import keyboard, mouse
 from threading import Thread
 
+
 class KeyDetector:
     sock = None
     listener = None
@@ -18,23 +19,14 @@ class KeyDetector:
 
     def on_press(self, key):
         data = "KEYBOARD|" + str(key) + "|PRESS"
-        # try:
-        #     data = "KEYBOARD|" + key.char + "|PRESS"
-        # except AttributeError:
-        #     data = "KEYBOARD|" + str(key) + "|PRESS"
-
         self.sock.sendall(data.encode())
         print(data)
 
     def on_release(self, key):
         data = "KEYBOARD|" + str(key) + "|RELEASE"
-        # try:
-        #     data = "KEYBOARD|" + key.char + "|RELEASE"
-        # except AttributeError:
-        #     data = "KEYBOARD|" + str(key) + "|RELEASE"
-
         self.sock.sendall(data.encode())
         print(data)
+
 
 class MouseDetector:
     sock = None
@@ -83,6 +75,7 @@ class MouseDetector:
         self.sock.sendall(data.encode())
         print(data)
 
+
 class ImageReceiver:
     def __init__(self, sock):
         self.sock = sock
@@ -93,15 +86,15 @@ class ImageReceiver:
 
     def recv_image(self):
         while True:
-            #String형의 이미지를 수신받아서 이미지로 변환 하고 화면에 출력
-            length = self.recvAll(16)
+            # String형의 이미지를 수신받아서 이미지로 변환 하고 화면에 출력
+            length = self.recv_all(16)
 
             if length == None:
                 print("recv_image : break")
                 break
 
-            stringData = self.recvAll(int(length))
-            data = numpy.fromstring(stringData, dtype=numpy.uint8)
+            string_data = self.recv_all(int(length))
+            data = numpy.fromstring(string_data, dtype=numpy.uint8)
 
             decimg = cv2.imdecode(data, 1)
 
@@ -112,7 +105,7 @@ class ImageReceiver:
 
         cv2.destroyAllWindows()
 
-    def recvAll(self, count):
+    def recv_all(self, count):
         buffer = b''
 
         while count:
@@ -126,10 +119,12 @@ class ImageReceiver:
 
         return buffer
 
+
 def esc_pressed():
     k.wait('esc')
     print("client end")
     exit()
+
 
 if __name__ == '__main__':
     sock = socket.socket()
@@ -138,9 +133,9 @@ if __name__ == '__main__':
 
     k.wait('b')
 
-    keyDector = KeyDetector(sock)
-    mouseseDector = MouseDetector(sock)
-    imageReceiver = ImageReceiver(sock)
+    key_detector = KeyDetector(sock)
+    mouse_detector = MouseDetector(sock)
+    image_receiver = ImageReceiver(sock)
 
     # t = Thread(target=esc_pressed)
     # t.start()
@@ -152,8 +147,8 @@ if __name__ == '__main__':
     k.wait('esc')
 
     sock.sendall("FINISHED".encode())
-    keyDector.listener.stop()
-    mouseseDector.listener.stop()
+    key_detector.listener.stop()
+    mouse_detector.listener.stop()
 
     sock.close()
 
