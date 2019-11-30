@@ -53,7 +53,7 @@ class MouseDetector:
     def on_move(self, x, y):
         data = "MOUSE|" + str(x) + "," + str(y) + "|MOVE"
         self.sock.sendall(data.encode())
-        time.sleep(0.005)
+        time.sleep(0.01)
         # print(data)
 
     def on_click(self, x, y, button, pressed):
@@ -136,13 +136,7 @@ if __name__ == '__main__':
     sock.connect(("192.168.0.11", 1080))
     sock.sendall("client".encode())
 
-    while True:
-        msg = input(">> ")
-
-        if msg == "break":
-            break
-
-        sock.sendall(msg.encode())
+    k.wait('b')
 
     keyDector = KeyDetector(sock)
     mouseseDector = MouseDetector(sock)

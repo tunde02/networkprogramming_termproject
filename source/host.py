@@ -9,7 +9,6 @@ from PIL import ImageGrab
 from threading import Thread
 
 keyDict = {
-    "Key.space": Key.space, 
     "Key.alt_l": Key.alt_l,
     "Key.alt_r": Key.alt_r,
     "Key.backspace": Key.backspace,
@@ -48,7 +47,22 @@ keyDict = {
     "Key.num_lock": Key.num_lock,
     "Key.pause": Key.pause,
     "Key.print_screen": Key.print_screen,
-    "Key.scroll_lock": Key.scroll_lock
+    "Key.scroll_lock": Key.scroll_lock,
+    "Key.alt": Key.alt,
+    "Key.alt_gr": Key.alt_gr,
+    "Key.cmd_l": Key.cmd_l,
+    "Key.cmd_r": Key.cmd_r,
+    "Key.ctrl": Key.ctrl,
+    "Key.f13": Key.f13,
+    "Key.f14": Key.f14,
+    "Key.f15": Key.f15,
+    "Key.f16": Key.f16,
+    "Key.f17": Key.f17,
+    "Key.f18": Key.f18,
+    "Key.f19": Key.f19,
+    "Key.f20": Key.f20,
+    "Key.shift": Key.shift,
+    "Key.menu": Key.menu
 }
 
 def recv_control(sock):
@@ -60,7 +74,7 @@ def recv_control(sock):
         msg = data.decode().split('|')
 
         if msg[2] != "MOVE":
-            print('Received : {} {} {}'.format(msg[0], msg[1], msg[2]))
+            print('Received : {}|{}|{}'.format(msg[0], msg[1], msg[2]))
 
         if msg[0] == "FINISHED":
             print("host terminated")
@@ -69,56 +83,51 @@ def recv_control(sock):
 
         if msg[0] == "KEYBOARD":
             if msg[2] == "PRESS":
-                if len(msg[1]) == 1:
-                    # keyController.press(msg[1])
-                    pg.keyDown(msg[1])
+                if len(msg[1]) == 3: 
+                    keyController.press(msg[1][1])
                 elif msg[1] == "<21>":
                     pg.keyDown("hanguel")
                 elif msg[1] == "<25>":
                     pg.keyDown("hanja")
                 else:
                     keyController.press(keyDict[msg[1]])
-                    # pg.keyDown(msg[1][4:len(msg[1]) - 1])
             elif msg[2] == "RELEASE":
-                if len(msg[1]) == 1:
-                    # keyController.release(msg[1])
-                    pg.keyUp(msg[1])
+                if len(msg[1]) == 3:
+                    keyController.release(msg[1][1])
                 elif msg[1] == "<21>":
                     pg.keyUp("hanguel")
                 elif msg[1] == "<25>":
                     pg.keyUp("hanja")
                 else:
                     keyController.release(keyDict[msg[1]])
-                    # pg.keyUp(msg[1][4:len(msg[1]) - 1])
         elif msg[0] == "MOUSE":
             if msg[1] == "LMB":
                 if msg[2] == "PRESS":
-                    # print("MOUSE|{}|PRESS".format(msg[1]))
                     mouseController.press(mouse.Button.left)
                 elif msg[2] == "RELEASE":
-                    # print("MOUSE|{}|RELEASE".format(msg[1]))
                     mouseController.release(mouse.Button.left)
             elif msg[1] == "RMB":
                 if msg[2] == "PRESS":
-                    # print("MOUSE|{}|PRESS".format(msg[1]))
                     mouseController.press(mouse.Button.right)
                 elif msg[2] == "RELEASE":
-                    # print("MOUSE|{}|RELEASE".format(msg[1]))
                     mouseController.release(mouse.Button.right)
             elif msg[1] == "SCROLL":
                 if msg[2] == "UP":
-                    # print("MOUSE|{}|UP".format(msg[1]))
                     mouseController.scroll(0, 1)
                 elif msg[2] == "DOWN":
-                    # print("MOUSE|{}|DOWN".format(msg[1]))
                     mouseController.scroll(0, -1)
             else:
                 mouseController.position = msg[1].split(",")[0], msg[1].split(",")[1]
 
 def screen_send_thread(sock):
     while True:
+        # 스크린샷 찍기
         imgGrab = ImageGrab.grab(bbox=(0, 0, 1920, 1080))
         cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
+
+        # 스크린샷에 커서 그리기
+        cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
+
         #추출한 이미지를 String 형태로 변환(인코딩)시키는 과정
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
         result, imgencode = cv2.imencode('.jpg', cv_img, encode_param)

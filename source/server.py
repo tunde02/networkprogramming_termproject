@@ -54,7 +54,7 @@ class ClientHandler:
                 print("terminated")
                 self.sock.close()
                 break
-            elif msg == "KEYBOARD|h|PRESS":
+            elif msg == "KEYBOARD|'h'|PRESS":
                 self.sock.recv(self.BUFSIZE) # eat release listener
                 print("match client to host")
                 self.match_host()
