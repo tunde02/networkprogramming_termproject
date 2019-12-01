@@ -66,21 +66,32 @@ keyDict = {
 }
 
 
-def recv_control(sock):
+def recv_msg(sock):
     key_controller = keyboard.Controller()
     mouse_controller = mouse.Controller()
 
     while True:
-        data = sock.recv(1024)
-        msg = data.decode().split('|')
+        try:
+            data = sock.recv(1024)
+        except ConnectionAbortedError:
+            break
 
-        if msg[2] != "MOVE":
-            print('Received : {}|{}|{}'.format(msg[0], msg[1], msg[2]))
+        msg = data.decode().split("|")
+
+        # if msg[2] != "MOVE":
+        #     print('Received : {}|{}|{}'.format(msg[0], msg[1], msg[2]))
 
         if msg[0] == "FINISHED":
             print("host terminated")
             sock.close()
             break
+        elif msg[0] == "GAME":
+            # print("{} start".fromat(msg[1]))
+            if msg[1] == "LOL":
+                start_lol()
+            elif msg[1] == "KART":
+                start_kart()
+
 
         if msg[0] == "KEYBOARD":
             if msg[2] == "PRESS":
@@ -125,42 +136,60 @@ def recv_control(sock):
 def screen_send_thread(sock):
     while True:
         # 스크린샷 찍기
-        imgGrab = ImageGrab.grab(bbox=(0, 0, 1920, 1080))
+        imgGrab = ImageGrab.grab(bbox=(0, 0, 960, 540))
         cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
 
         # 스크린샷에 커서 그리기
         cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
 
-        #추출한 이미지를 String 형태로 변환(인코딩)시키는 과정
+        # 추출한 이미지를 String 형태로 변환(인코딩)시키는 과정
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
         result, imgencode = cv2.imencode('.jpg', cv_img, encode_param)
         data = numpy.array(imgencode)
         stringData = data.tostring()
 
-        #String 형태로 변환한 이미지를 socket을 통해서 전송
+        # String 형태로 변환한 이미지를 socket을 통해서 전송
         sock.send(str(len(stringData)).ljust(16).encode())
         sock.send(stringData)
 
 
+def start_lol():
+    # 게임 시작하고 스크린 사이즈 측정해서 서버에 넘겨줘야됨
+    print("lol started")
+    print("send size to server")
+    sock.sendall("SCREENSIZE|960,540".encode())
+    t1 = Thread(target=screen_send_thread, args=[sock])
+    t1.start()
+
+
+def start_kart():
+    print("kart started")
+    sock.sendall("SCREENSIZE|960,540".encode())
+    t1 = Thread(target=screen_send_thread, args=[sock])
+    t1.start()
+
+
 if __name__ == "__main__":
     sock = socket.socket()
-    sock.connect(("192.168.0.11", 1080))
+    # 192.168.0.11
+    sock.connect(("127.0.0.1", 1080))
     sock.sendall("host".encode())
 
-    print("waiting key s")
-    k.wait("s")
+    recv_msg(sock)
+    # print("waiting key s")
+    # k.wait("s")
 
-    sock.sendall("s".encode())
+    # sock.sendall("s".encode())
 
     # t1, t2 to "start_connection" function
 
-    t1 = Thread(target=screen_send_thread, args=[sock])
-    t2 = Thread(target=recv_control, args=[sock])
+    # t1 = Thread(target=screen_send_thread, args=[sock])
+    # t2 = Thread(target=recv_msg, args=[sock])
 
-    t1.start()
-    t2.start()
+    # t1.start()
+    # t2.start()
 
-    t1.join()
-    t2.join()
+    # t1.join()
+    # t2.join()
 
     print("host end")

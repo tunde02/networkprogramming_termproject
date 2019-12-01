@@ -18,6 +18,7 @@ class ClientGUI:
 
         self.connect_btn = tkinter.Button(self.window, text="Connect", width=10, height=2, overrelief="solid")
         quit_btn = tkinter.Button(self.window, text="Quit", width=10, height=2, overrelief="solid", command=self.window.destroy)
+        # self.window.protocol("WM_DELETE_WINDOW", self.close_window)
 
         self.ip_entry.place(x=115, y=50)
         self.port_entry.place(x=215, y=50)
@@ -28,7 +29,6 @@ class ClientGUI:
         self.window.mainloop()
 
     def close_window(self):
-        print("destroy!")
         self.window.destroy()
 
 
@@ -56,8 +56,8 @@ class GameListGUI:
 
         # Game List
         list_frame = tkinter.Frame(self.window, bd=1, relief="solid")
-        lol_btn = tkinter.Button(list_frame, text="League of Legend", width=20, height=2, overrelief="solid")
-        kart_btn = tkinter.Button(list_frame, text="Kart Rider", width=20, height=2, overrelief="solid")
+        self.lol_btn = tkinter.Button(list_frame, text="League of Legend (0)", state="disabled", width=20, height=2, overrelief="solid")
+        self.kart_btn = tkinter.Button(list_frame, text="Kart Rider (0)", state="disabled", width=20, height=2, overrelief="solid")
 
         # Set Layout
         ip_label.grid(row=0, column=0)
@@ -65,8 +65,8 @@ class GameListGUI:
         addr_frame.pack()
         addr_wrapper.pack(side="top", fill="both")
 
-        lol_btn.pack()
-        kart_btn.pack()
+        self.lol_btn.pack()
+        self.kart_btn.pack()
         list_frame.pack(expand=True, fill="both")
 
         self.disconnect_btn.grid(row=0, column=0, padx=25)
@@ -78,6 +78,49 @@ class GameListGUI:
         self.window.mainloop()
 
     def close_window(self):
+        self.window.destroy()
+
+    def change_list(self, hosts):
+        if int(hosts) <= 0:
+            self.lol_btn.config(text="League of Legend (" + hosts + ")", state="disabled")
+            self.kart_btn.config(text="Kart Rider (" + hosts + ")", state="disabled")
+        else:
+            self.lol_btn.config(text="League of Legend (" + hosts + ")", state="normal")
+            self.kart_btn.config(text="Kart Rider (" + hosts + ")", state="normal")
+
+
+class ScreenGUI:
+    def __init__(self, game, size):
+        self.initUI(game, size)
+
+    def initUI(self, game, size):
+        screen_size = size.split(",")
+        geo = screen_size[0] + "x" + screen_size[1]
+        self.window=tkinter.Tk()
+        self.window.title(game)
+        self.window.geometry(geo + "+0+0")
+        self.window.resizable(False, False)
+
+        self.screen_label = tkinter.Label(self.window)
+        self.screen_label.pack()
+        # self.ip_entry = tkinter.Entry(self.window, width=10, borderwidth=4)
+        # self.ip_entry.insert(0, "127.0.0.1")
+        # self.port_entry = tkinter.Entry(self.window, width=10, borderwidth=4)
+        # self.port_entry.insert(0, "1080")
+
+        # self.connect_btn = tkinter.Button(self.window, text="Connect", width=10, height=2, overrelief="solid")
+        # quit_btn = tkinter.Button(self.window, text="Quit", width=10, height=2, overrelief="solid", command=self.window.destroy)
+
+        # self.ip_entry.place(x=115, y=50)
+        # self.port_entry.place(x=215, y=50)
+        # self.connect_btn.place(x=115, y=100)
+        # quit_btn.place(x=215, y=100)
+
+    def start_window(self):
+        self.window.mainloop()
+
+    def close_window(self):
+        print("destroy!")
         self.window.destroy()
 
 
