@@ -198,14 +198,14 @@ class Receiver:
                 data = numpy.fromstring(string_data, dtype=numpy.uint8)
 
                 decimg = cv2.imdecode(data, 1)
-                screen_img = ImageTk.PhotoImage(Image.fromarray(decimg, "RGB"))
+                # screen_img = ImageTk.PhotoImage(Image.fromarray(decimg, "RGB"))
                 # print("=====img type : {}=====".format(type(screen_img)))
 
                 # self.screen_window.screen_label.config(image=screen_img)
             
-                # cv2.imshow('CLIENT', decimg)
+                cv2.imshow('CLIENT', decimg)
 
-                if cv2.waitKey(1) == ord('esc'):
+                if cv2.waitKey(1) == 27:
                     cv2.destroyAllWindows()
                     start_list_gui(self.sock)
                     break
@@ -364,7 +364,8 @@ def connect_to(connection_window):
 
     # receiver = Receiver(sock, list_window, None)
 
-    connection_window.close_window(sock)
+    connection_window.close_window()
+    start_list_gui(sock)
 
     # list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
     # list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))
