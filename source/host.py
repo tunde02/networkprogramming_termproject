@@ -136,7 +136,7 @@ def recv_msg(sock):
 def screen_send_thread(sock):
     while True:
         # 스크린샷 찍기
-        imgGrab = ImageGrab.grab(bbox=(0, 0, 960, 540))
+        imgGrab = ImageGrab.grab(bbox=(0, 0, 1920, 1080))
         cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
 
         # 스크린샷에 커서 그리기
@@ -157,7 +157,7 @@ def start_lol():
     # 게임 시작하고 스크린 사이즈 측정해서 서버에 넘겨줘야됨
     print("lol started")
     print("send size to server")
-    sock.sendall("SCREENSIZE|960,540".encode())
+    sock.sendall("SCREENSIZE|1920,1080".encode())
     t1 = Thread(target=screen_send_thread, args=[sock])
     t1.start()
 
@@ -172,7 +172,7 @@ def start_kart():
 if __name__ == "__main__":
     sock = socket.socket()
     # 192.168.0.11
-    sock.connect(("127.0.0.1", 1080))
+    sock.connect(("192.168.0.11", 1080))
     sock.sendall("host".encode())
 
     recv_msg(sock)

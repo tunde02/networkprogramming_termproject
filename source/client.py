@@ -201,14 +201,16 @@ class Receiver:
                 screen_img = ImageTk.PhotoImage(Image.fromarray(decimg, "RGB"))
                 # print("=====img type : {}=====".format(type(screen_img)))
 
-                self.screen_window.screen_label.config(image=screen_img)
+                # self.screen_window.screen_label.config(image=screen_img)
             
                 # cv2.imshow('CLIENT', decimg)
 
-                # if cv2.waitKey(1) == ord('q'):
-                #     break
+                if cv2.waitKey(1) == ord('esc'):
+                    cv2.destroyAllWindows()
+                    start_list_gui(self.sock)
+                    break
 
-            # cv2.destroyAllWindows()
+            
 
     def recv_msg(self):
         while True:
@@ -314,6 +316,19 @@ def start_gui():
     connection_window.start_window()
 
 
+def start_list_gui(sock):
+    list_window = client_gui.GameListGUI(ip, port)
+
+    receiver = Receiver(sock, list_window, None)
+
+    list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
+    list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))
+    list_window.quit_btn.config(command=lambda: disconnect(list_window, sock))
+    list_window.lol_btn.config(command=lambda: start_game_gui(sock, "LOL", list_window, receiver))
+    list_window.kart_btn.config(command=lambda: start_game_gui(sock, "KART", list_window, receiver))
+    list_window.start_window()
+
+
 def start_game_gui(sock, game, list_window, receiver):
     print("start game gui - {}".format(game))
     receiver.change_receiver_type(2)
@@ -326,11 +341,11 @@ def start_game_gui(sock, game, list_window, receiver):
 
     list_window.close_window()
 
-    screen_window = client_gui.ScreenGUI(game, receiver.screen_size)
-    receiver.screen_window = screen_window
+    # screen_window = client_gui.ScreenGUI(game, receiver.screen_size)
+    # receiver.screen_window = screen_window
     # add btn listeners
-    screen_window.window.protocol("WM_DELETE_WINDOW", lambda: (key_detector.listener.stop(), mouse_detector.listener.stop(), screen_window.close_window(), receiver.disconnect()))
-    screen_window.start_window()
+    # screen_window.window.protocol("WM_DELETE_WINDOW", lambda: (key_detector.listener.stop(), mouse_detector.listener.stop(), screen_window.close_window(), receiver.disconnect()))
+    # screen_window.start_window()
 
 
 def connect_to(connection_window):
@@ -345,18 +360,18 @@ def connect_to(connection_window):
 
     sock.sendall("client".encode())
 
-    list_window = client_gui.GameListGUI(ip, port)
+    # list_window = client_gui.GameListGUI(ip, port)
 
-    receiver = Receiver(sock, list_window, None)
+    # receiver = Receiver(sock, list_window, None)
 
-    connection_window.close_window()
+    connection_window.close_window(sock)
 
-    list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
-    list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))
-    list_window.quit_btn.config(command=lambda: disconnect(list_window, sock))
-    list_window.lol_btn.config(command=lambda: start_game_gui(sock, "LOL", list_window, receiver))
-    list_window.kart_btn.config(command=lambda: start_game_gui(sock, "KART", list_window, receiver))
-    list_window.start_window()
+    # list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
+    # list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))
+    # list_window.quit_btn.config(command=lambda: disconnect(list_window, sock))
+    # list_window.lol_btn.config(command=lambda: start_game_gui(sock, "LOL", list_window, receiver))
+    # list_window.kart_btn.config(command=lambda: start_game_gui(sock, "KART", list_window, receiver))
+    # list_window.start_window()
 
 
 def disconnect(list_window, sock):
@@ -377,6 +392,9 @@ if __name__ == '__main__':
     # connection_window = client_gui.ClientGUI()
     # connection_window.connect_btn.config(command=connect_to)
     # connection_window.start_window()
+    ip = ""
+    port = 0
+
     start_gui()
 
     # sock = socket.socket()
