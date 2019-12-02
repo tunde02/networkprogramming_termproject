@@ -155,6 +155,7 @@ class Receiver:
         self.list_window = list_window
         self.screen_window = screen_window
 
+        print("^^receiver start^^")
         t = Thread(target=self.recv_from, daemon=True)
         t.start()
         # t.join()
@@ -188,9 +189,9 @@ class Receiver:
                     break
 
                 if len(length) == 0:
-                    print("Disconnected")
+                    print("finished")
                     self.recv_type = 1
-                    self.disconnect()
+                    self.finish()
                     break
                 # elif length.decode() == "HOSTS":
                 #     continue
@@ -208,9 +209,13 @@ class Receiver:
 
                 if cv2.waitKey(1) == 27:
                     cv2.destroyAllWindows()
+                    print("disconnect with HOST")
                     self.sock.sendall("DISCONNECT".encode())
-                    start_list_gui(self.sock, self.ip, self.port)
-                    break
+                    self.recv_type = 1
+                    self.unregister_funcs()
+                    # start_list_gui(self.sock, self.ip, self.port)
+                    continue
+        print("^^receiver end^^")
 
 
     def recv_all(self, count):
@@ -231,10 +236,10 @@ class Receiver:
         return buffer
 
     def change_receiver_type(self, recv_type):
-        print("====change receiver type to {}====".format(recv_type))
+        # print("====change receiver type to {}====".format(recv_type))
         self.recv_type = recv_type
 
-    def disconnect(self):
+    def finish(self):
         self.isConnected = False
 
     def register_funcs(self):
@@ -273,6 +278,7 @@ def start_game_gui(sock, game, list_window, receiver):
     print("start game gui - {}".format(game))
     receiver.change_receiver_type(2)
     msg = "CONNECT|" + game
+    print("<send to server : {}>".format(msg))
     sock.sendall(msg.encode())
 
     # screen_size = receiver.screen_size
@@ -283,9 +289,10 @@ def start_game_gui(sock, game, list_window, receiver):
     # list_window.close_window()
     list_window.window.withdraw()
 
-    while receiver.isConnected:
+    while receiver.recv_type == 2:
+        # print("h")
         time.sleep(1)
-    
+    print("reopen list")
     list_window.window.deiconify()
 
     # screen_window = client_gui.ScreenGUI(game, receiver.screen_size)

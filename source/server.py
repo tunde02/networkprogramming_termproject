@@ -31,10 +31,13 @@ def run_server(ip='127.0.0.1', port=1080):
                     notice_clients(clnts, hosts)
             else:
                 print("New Host Accessed")
-                new_host = HostHandler(sock=conn, addr=addr)
+                new_host = HostHandler(sock=conn, addr=addr, host_index=len(hosts))
                 hosts.append(new_host)
                 connects.append(False)
-                print("see my len : {}".format(len(connects)))
+                new_host.clnts = clnts
+                new_host.hosts = hosts
+                new_host.connects = connects
+                
                 if len(clnts) > 0:
                     clnts[0].hosts = hosts
                     clnts[0].connects = connects
@@ -49,7 +52,7 @@ def find_host(connects):
     i = 0
     for temp in connects:
         if temp is False:
-            print("find host! : {}".format(i))
+            print("find host at : {}".format(i))
             return i
         i = i + 1
 
@@ -132,11 +135,16 @@ class ClientHandler:
 class HostHandler:
     BUFSIZE = 1024
     terminator = "FINISHED"
+    clnts = []
+    hosts = []
+    connects = []
 
-    def __init__(self, sock, addr):
+    def __init__(self, sock, addr, host_index):
         self.sock = sock
         self.addr = addr
         self.client = None
+        self.host_index = host_index
+        self.connects_index = 0
 
         t = Thread(target=self.recv_msg)
         t.start()
@@ -154,7 +162,7 @@ class HostHandler:
                 #     continue
             # String형의 이미지를 수신받아서 이미지로 변환하고 화면에 출력
             length = self.sock.recv(64)
-            print(length)
+            # print(length)
             # if length[0] == b"\x":
             #     print("deliver_image length is None break")
             #     break
@@ -164,7 +172,11 @@ class HostHandler:
                     print("===send size to client===")
                     self.client.send(length)
                     continue
+                elif msg[0] == self.terminator:
+                    self.client.sendall("DISCONNECT".encode())
+                    break
             except UnicodeDecodeError:
+                print("unicode error")
                 pass
 
             # if self.client is None:
@@ -177,13 +189,22 @@ class HostHandler:
                 self.client.send(str(len(string_data)).ljust(16).encode())
                 self.client.send(string_data)
             except AttributeError:
-                break
+                continue
+
+        self.sock.close()
+        print("hosthandler end")
 
     def connect_client(self, sock):
         self.client = sock
 
     def disconnect_client(self):
+        self.client.sendall("DISCONNECT".encode())
+        # self.client.disconnect_host()
+        # print("disconnection message sent")
         self.client = None
+        self.connects[self.connects_index] = False
+
+        notice_clients(self.clnts, self.hosts)
 
     def deliver_image(self):
         while True:

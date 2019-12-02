@@ -67,71 +67,81 @@ keyDict = {
     "Key.menu": Key.menu
 }
 
+class MsgReceiver:
+    isConnected = True
 
-def recv_msg(sock):
-    key_controller = keyboard.Controller()
-    mouse_controller = mouse.Controller()
-    img_sender = None
+    def __init__(self, sock):
+        self.sock = sock
 
-    while True:
-        try:
-            data = sock.recv(1024)
-        except ConnectionAbortedError:
-            break
+        t = Thread(target=self.recv_msg, daemon=True)
+        t.start()
 
-        msg = data.decode().split("|")
+    def recv_msg(self):
+        key_controller = keyboard.Controller()
+        mouse_controller = mouse.Controller()
+        img_sender = None
 
-        # if msg[2] != "MOVE":
-        #     print('Received : {}|{}|{}'.format(msg[0], msg[1], msg[2]))
+        while self.isConnected:
+            try:
+                data = self.sock.recv(1024)
+            except ConnectionAbortedError:
+                break
 
-        if msg[0] == "DISCONNECT":
-            print("client disconnected")
-            img_sender.isConnected = False
-            continue
-        elif msg[0] == "GAME":
-            if msg[1] == "REMOTE":
-                img_sender = start_remote_control()
-            elif msg[1] == "KART":
-                img_sender = start_kart()
+            msg = data.decode().split("|")
 
-        if msg[0] == "KEYBOARD":
-            if msg[2] == "PRESS":
-                if len(msg[1]) == 3: 
-                    key_controller.press(msg[1][1])
-                elif msg[1] == "<21>":
-                    pg.keyDown("hanguel")
-                elif msg[1] == "<25>":
-                    pg.keyDown("hanja")
-                else:
-                    key_controller.press(keyDict[msg[1]])
-            elif msg[2] == "RELEASE":
-                if len(msg[1]) == 3:
-                    key_controller.release(msg[1][1])
-                elif msg[1] == "<21>":
-                    pg.keyUp("hanguel")
-                elif msg[1] == "<25>":
-                    pg.keyUp("hanja")
-                else:
-                    key_controller.release(keyDict[msg[1]])
+            # if msg[2] != "MOVE":
+            #     print('Received : {}|{}|{}'.format(msg[0], msg[1], msg[2]))
 
-        elif msg[0] == "MOUSE":
-            if msg[1] == "LMB":
+            if msg[0] == "DISCONNECT":
+                print("client disconnected")
+                img_sender.isConnected = False
+                continue
+            elif msg[0] == "GAME":
+                if msg[1] == "REMOTE":
+                    img_sender = start_remote_control()
+                elif msg[1] == "KART":
+                    img_sender = start_kart()
+
+            if msg[0] == "KEYBOARD":
                 if msg[2] == "PRESS":
-                    mouse_controller.press(mouse.Button.left)
+                    if len(msg[1]) == 3: 
+                        key_controller.press(msg[1][1])
+                    elif msg[1] == "<21>":
+                        pg.keyDown("hanguel")
+                    elif msg[1] == "<25>":
+                        pg.keyDown("hanja")
+                    else:
+                        key_controller.press(keyDict[msg[1]])
                 elif msg[2] == "RELEASE":
-                    mouse_controller.release(mouse.Button.left)
-            elif msg[1] == "RMB":
-                if msg[2] == "PRESS":
-                    mouse_controller.press(mouse.Button.right)
-                elif msg[2] == "RELEASE":
-                    mouse_controller.release(mouse.Button.right)
-            elif msg[1] == "SCROLL":
-                if msg[2] == "UP":
-                    mouse_controller.scroll(0, 10)
-                elif msg[2] == "DOWN":
-                    mouse_controller.scroll(0, -10)
-            else:
-                mouse_controller.position = msg[1].split(",")[0], msg[1].split(",")[1]
+                    if len(msg[1]) == 3:
+                        key_controller.release(msg[1][1])
+                    elif msg[1] == "<21>":
+                        pg.keyUp("hanguel")
+                    elif msg[1] == "<25>":
+                        pg.keyUp("hanja")
+                    else:
+                        key_controller.release(keyDict[msg[1]])
+
+            elif msg[0] == "MOUSE":
+                if msg[1] == "LMB":
+                    if msg[2] == "PRESS":
+                        mouse_controller.press(mouse.Button.left)
+                    elif msg[2] == "RELEASE":
+                        mouse_controller.release(mouse.Button.left)
+                elif msg[1] == "RMB":
+                    if msg[2] == "PRESS":
+                        mouse_controller.press(mouse.Button.right)
+                    elif msg[2] == "RELEASE":
+                        mouse_controller.release(mouse.Button.right)
+                elif msg[1] == "SCROLL":
+                    if msg[2] == "UP":
+                        mouse_controller.scroll(0, 10)
+                    elif msg[2] == "DOWN":
+                        mouse_controller.scroll(0, -10)
+                else:
+                    mouse_controller.position = msg[1].split(",")[0], msg[1].split(",")[1]
+        
+        self.sock.sendall("FINISHED".encode())
 
 
 class ImgSender:
@@ -141,6 +151,7 @@ class ImgSender:
         self.sock = sock
         self.screen_box = screen_box
 
+        print("imgsender start")
         t = Thread(target=self.screen_send_thread)
         t.start()
 
@@ -162,6 +173,7 @@ class ImgSender:
             # String 형태로 변환한 이미지를 socket을 통해서 전송
             self.sock.send(str(len(stringData)).ljust(16).encode())
             self.sock.send(stringData)
+        print("imgsender end")
 
 
 def start_remote_control():
@@ -215,12 +227,25 @@ def start_kart():
     return img_sender
 
 
+def wait_terminate_key():
+    k.wait("F11")
+
+
+
 if __name__ == "__main__":
     sock = socket.socket()
     # 192.168.0.11
     sock.connect(("127.0.0.1", 1080))
     sock.sendall("host".encode())
+    print("host start")
 
-    recv_msg(sock)
+    t = Thread(target=wait_terminate_key)
+    t.start()
+
+    msg_receiver = MsgReceiver(sock)
+
+    t.join()
+
+    msg_receiver.isConnected = False
 
     print("host end")
