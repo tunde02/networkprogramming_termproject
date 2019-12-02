@@ -3,10 +3,12 @@ import cv2
 import numpy
 import keyboard as k
 import pyautogui as pg
+import time
 from pynput import keyboard, mouse
 from pynput.keyboard import Key
 from PIL import ImageGrab
 from threading import Thread
+import tests
 
 keyDict = {
     "Key.alt_l": Key.alt_l,
@@ -69,6 +71,7 @@ keyDict = {
 def recv_msg(sock):
     key_controller = keyboard.Controller()
     mouse_controller = mouse.Controller()
+    img_sender = None
 
     while True:
         try:
@@ -81,17 +84,15 @@ def recv_msg(sock):
         # if msg[2] != "MOVE":
         #     print('Received : {}|{}|{}'.format(msg[0], msg[1], msg[2]))
 
-        if msg[0] == "FINISHED":
-            print("host terminated")
-            sock.close()
-            break
+        if msg[0] == "DISCONNECT":
+            print("client disconnected")
+            img_sender.isConnected = False
+            continue
         elif msg[0] == "GAME":
-            # print("{} start".fromat(msg[1]))
-            if msg[1] == "LOL":
-                start_lol()
+            if msg[1] == "REMOTE":
+                img_sender = start_remote_control()
             elif msg[1] == "KART":
-                start_kart()
-
+                img_sender = start_kart()
 
         if msg[0] == "KEYBOARD":
             if msg[2] == "PRESS":
@@ -126,70 +127,100 @@ def recv_msg(sock):
                     mouse_controller.release(mouse.Button.right)
             elif msg[1] == "SCROLL":
                 if msg[2] == "UP":
-                    mouse_controller.scroll(0, 3)
+                    mouse_controller.scroll(0, 10)
                 elif msg[2] == "DOWN":
-                    mouse_controller.scroll(0, -3)
+                    mouse_controller.scroll(0, -10)
             else:
                 mouse_controller.position = msg[1].split(",")[0], msg[1].split(",")[1]
 
 
-def screen_send_thread(sock):
-    while True:
-        # 스크린샷 찍기
-        imgGrab = ImageGrab.grab(bbox=(0, 0, 1920, 1080))
-        cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
+class ImgSender:
+    isConnected = True
 
-        # 스크린샷에 커서 그리기
-        cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
+    def __init__(self, sock, screen_box):
+        self.sock = sock
+        self.screen_box = screen_box
 
-        # 추출한 이미지를 String 형태로 변환(인코딩)시키는 과정
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
-        result, imgencode = cv2.imencode('.jpg', cv_img, encode_param)
-        data = numpy.array(imgencode)
-        stringData = data.tostring()
+        t = Thread(target=self.screen_send_thread)
+        t.start()
 
-        # String 형태로 변환한 이미지를 socket을 통해서 전송
-        sock.send(str(len(stringData)).ljust(16).encode())
-        sock.send(stringData)
+    def screen_send_thread(self):
+        while self.isConnected:
+            # 스크린샷 찍기
+            imgGrab = ImageGrab.grab(bbox=self.screen_box)
+            cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
+
+            # 스크린샷에 커서 그리기
+            cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
+
+            # 추출한 이미지를 String 형태로 변환(인코딩)시키는 과정
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+            result, imgencode = cv2.imencode('.jpg', cv_img, encode_param)
+            data = numpy.array(imgencode)
+            stringData = data.tostring()
+
+            # String 형태로 변환한 이미지를 socket을 통해서 전송
+            self.sock.send(str(len(stringData)).ljust(16).encode())
+            self.sock.send(stringData)
 
 
-def start_lol():
-    # 게임 시작하고 스크린 사이즈 측정해서 서버에 넘겨줘야됨
-    print("lol started")
-    print("send size to server")
+def start_remote_control():
+    print("remote control started")
     sock.sendall("SCREENSIZE|1920,1080".encode())
-    t1 = Thread(target=screen_send_thread, args=[sock])
-    t1.start()
+
+    img_sender = ImgSender(sock, (0, 0, 1920, 1080))
+    
+    return img_sender
 
 
 def start_kart():
+    windows = tests.getWindowSizes()
+    for win in windows:
+        if win[2] == "NexonPlug":
+            x = win[1][0] + 300
+            y = win[1][1] + 40
+            mC = mouse.Controller()
+            kC = keyboard.Controller()
+            mC.position = (x, y)
+            mC.click(mouse.Button.left)
+            # time.sleep(3)
+            # kC.press(Key.left)
+            # kC.release(Key.left)
+            # kC.press(Key.enter)
+            # kC.release(Key.enter)
+            break
+
+    kart_window = []
+    isFound = False
+    while not isFound:
+        windows = tests.getWindowSizes()
+        for win in windows:
+            if win[2] == "KartRider Client":
+                kart_window = win
+                isFound = True
+                break
+        time.sleep(0.3)
+
     print("kart started")
-    sock.sendall("SCREENSIZE|960,540".encode())
-    t1 = Thread(target=screen_send_thread, args=[sock])
-    t1.start()
+
+    screen_x = kart_window[1][0]
+    screen_y = kart_window[1][1]
+    screen_width = kart_window[1][2]
+    screen_height = kart_window[1][3]
+
+    msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
+    sock.sendall(msg.encode())
+    img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
+    
+    return img_sender
 
 
 if __name__ == "__main__":
     sock = socket.socket()
     # 192.168.0.11
-    sock.connect(("192.168.0.11", 1080))
+    sock.connect(("127.0.0.1", 1080))
     sock.sendall("host".encode())
 
     recv_msg(sock)
-    # print("waiting key s")
-    # k.wait("s")
-
-    # sock.sendall("s".encode())
-
-    # t1, t2 to "start_connection" function
-
-    # t1 = Thread(target=screen_send_thread, args=[sock])
-    # t2 = Thread(target=recv_msg, args=[sock])
-
-    # t1.start()
-    # t2.start()
-
-    # t1.join()
-    # t2.join()
 
     print("host end")

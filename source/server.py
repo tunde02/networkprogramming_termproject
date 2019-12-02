@@ -3,7 +3,7 @@ import keyboard
 from threading import Thread
 
 
-def run_server(ip='192.168.0.11', port=1080):
+def run_server(ip='127.0.0.1', port=1080):
     with socket.socket() as sock:
         sock.bind((ip, port))
 
@@ -21,10 +21,11 @@ def run_server(ip='192.168.0.11', port=1080):
 
             if sock_type.decode() == "client":
                 print("New Client Accessed")
-                new_clnt = ClientHandler(sock=conn, addr=addr)
+                new_clnt = ClientHandler(sock=conn, addr=addr, clnt_index=len(clnts))
                 clnts.append(new_clnt)
-                new_clnt.connects = connects
+                new_clnt.clnts = clnts
                 new_clnt.hosts = hosts
+                new_clnt.connects = connects
 
                 if len(hosts) > 0:
                     notice_clients(clnts, hosts)
@@ -56,20 +57,23 @@ def find_host(connects):
 def notice_clients(clnts, hosts):
     notice = "HOSTS|" + str(len(hosts))
     for i in clnts:
-        i.sock.sendall(notice.encode())
+        if i is not None:
+            i.sock.sendall(notice.encode())
 
 
 class ClientHandler:
     BUFSIZE = 1024
     terminator = "FINISHED"
+    clnts = []
     hosts = []
     connects = []
 
-    def __init__(self, sock, addr):
+    def __init__(self, sock, addr, clnt_index):
         self.sock = sock
         self.addr = addr
         self.host = None
-        self.c_index = 0
+        self.clnt_index = clnt_index
+        self.connects_index = 0
 
         t = Thread(target=self.recv_msg)
         t.start()
@@ -86,14 +90,19 @@ class ClientHandler:
             if msg[0] == self.terminator:
                 print("Client Exited")
                 self.sock.close()
+                self.clnts[self.clnt_index] = None
                 if len(self.connects) > 0:
-                    self.connects[self.c_index] = False
-                    self.c_index = 0
+                    self.connects[self.connects_index] = False
+                    self.connects_index = 0
                 break
             elif msg[0] == "CONNECT":
                 print("match client to host : " + str(data))
-                self.match_host(msg[1])
+                self.connect_host(msg[1])
                 # break
+            elif msg[0] == "DISCONNECT":
+                print("disconnect client with host")
+                self.disconnect_host()
+                continue
 
             if self.host is not None:
                 self.host.sock.sendall(data)
@@ -101,25 +110,23 @@ class ClientHandler:
             # print('Received : {} << {}'.format(msg, self.addr))
             # self.host.sendall(data)
 
-    def match_host(self, game):
-        self.c_index = find_host(self.connects)
-        print("===gello?===")
-        self.host = self.hosts[self.c_index]
-        self.connects[self.c_index] = True
-        self.host.match_client(self.sock)
+    def connect_host(self, game):
+        self.connects_index = find_host(self.connects)
+        self.host = self.hosts[self.connects_index]
+        self.connects[self.connects_index] = True
+        self.host.connect_client(self.sock)
+
         print("GAME|" + game)
         self.host.sock.sendall(("GAME|" + game).encode())
-        # while True:
-        #     data = self.sock.recv(self.BUFSIZE)
-        #     msg = data.decode()
+    
+    def disconnect_host(self):
+        self.host.sock.sendall("DISCONNECT".encode())
+        self.host.disconnect_client()
+        print("disconnection message sent")
+        self.host = None
+        self.connects[self.connects_index] = False
 
-        #     if msg == self.terminator:
-        #         print("terminated")
-        #         self.host.sendall("FINISHED".encode())
-        #         self.sock.close()
-        #         break
-        #     # print("send client's msg to host")
-        #     self.host.sendall(data)
+        self.sock.sendall(str("HOSTS|" + str(len(self.hosts))).encode())
 
 
 class HostHandler:
@@ -135,31 +142,48 @@ class HostHandler:
         t.start()
 
     def recv_msg(self):
-        # while True:
-        #     trigger = self.sock.recv(1024)
-        #     if trigger.decode() == "s":
-        #         self.match_client()
-        #         self.deliver_image()
-        #         break
         while True:
+                # msg = self.sock.recv(64)
+
+                # if msg is None:
+                #     print("deliver_image length is None break")
+                #     break
+                # elif msg.decode().split("|")[0] == "SCREENSIZE":
+                #     print("===send size to client===")
+                #     self.client.send(msg)
+                #     continue
             # String형의 이미지를 수신받아서 이미지로 변환하고 화면에 출력
             length = self.sock.recv(64)
+            print(length)
+            # if length[0] == b"\x":
+            #     print("deliver_image length is None break")
+            #     break
+            try:
+                msg = length.decode().split("|")
+                if msg[0] == "SCREENSIZE":
+                    print("===send size to client===")
+                    self.client.send(length)
+                    continue
+            except UnicodeDecodeError:
+                pass
 
-            if length is None:
-                print("deliver_image length is None break")
-                break
-            elif length.decode().split("|")[0] == "SCREENSIZE":
-                print("===send size to client===")
-                self.client.send(length)
-                continue
+            # if self.client is None:
+            #     continue
 
             string_data = self.recv_image(int(length))
-            # host와 연결된 client에게 그대로 보냄
-            self.client.send(str(len(string_data)).ljust(16).encode())
-            self.client.send(string_data)
 
-    def match_client(self, sock):
+            # host와 연결된 client에게 그대로 보냄
+            try:
+                self.client.send(str(len(string_data)).ljust(16).encode())
+                self.client.send(string_data)
+            except AttributeError:
+                break
+
+    def connect_client(self, sock):
         self.client = sock
+
+    def disconnect_client(self):
+        self.client = None
 
     def deliver_image(self):
         while True:

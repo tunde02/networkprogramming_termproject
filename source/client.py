@@ -145,32 +145,31 @@ class Receiver:
     recv_type = 1 # msg: 1, img: 2
     isConnected = True
     screen_size = ""
+    key_detector = None
+    mouse_detector = None
 
-    def __init__(self, sock, list_window, screen_window):
+    def __init__(self, sock, ip, port, list_window, screen_window):
         self.sock = sock
+        self.ip = ip
+        self.port = port
         self.list_window = list_window
         self.screen_window = screen_window
 
-        t = Thread(target=self.recv_from)
+        t = Thread(target=self.recv_from, daemon=True)
         t.start()
-        # t1 = Thread(target=self.recv_msg)
-        # t2 = Thread(target=self.recv_img)
-
-        # t1.start()
-        # t2.start()
+        # t.join()
 
     def recv_from(self):
-        while True:
-            if not self.isConnected:
-                break
-
+        while self.isConnected:
             if self.recv_type == 1:
                 try:
-                    data = self.sock.recv(256).decode()
-                except ConnectionAbortedError:
+                    data = self.sock.recv(256)
+                    print("received data :".format(data))
+                except OSError:
+                    print("OS error")
                     break
 
-                msg = data.split("|")
+                msg = data.decode().split("|")
 
                 if msg[0] == "HOSTS":
                     # change list GUI
@@ -185,11 +184,13 @@ class Receiver:
                 try:
                     length = self.recv_all(16)
                 except ConnectionAbortedError:
+                    print("helo?")
                     break
 
                 if len(length) == 0:
                     print("Disconnected")
                     self.recv_type = 1
+                    self.disconnect()
                     break
                 # elif length.decode() == "HOSTS":
                 #     continue
@@ -202,77 +203,15 @@ class Receiver:
                 # print("=====img type : {}=====".format(type(screen_img)))
 
                 # self.screen_window.screen_label.config(image=screen_img)
-            
+
                 cv2.imshow('CLIENT', decimg)
 
                 if cv2.waitKey(1) == 27:
                     cv2.destroyAllWindows()
-                    start_list_gui(self.sock)
+                    self.sock.sendall("DISCONNECT".encode())
+                    start_list_gui(self.sock, self.ip, self.port)
                     break
 
-            
-
-    def recv_msg(self):
-        while True:
-            if not self.isConnected:
-                break
-
-            if self.recv_type != 1:
-                time.sleep(0.1)
-                continue
-            try:
-                data = self.sock.recv(256).decode()
-            except ConnectionAbortedError:
-                break
-
-            msg = data.split("|")
-
-            if msg[0] == "HOSTS":
-                # change list GUI
-                self.list_window.change_list(msg[1])
-            elif msg[0] == "SCREENSIZE":
-                print("size : " + msg[1])
-                self.screen_size = msg[1]
-            else:
-                print("Invalid msg from server : {}".format(data))
-                pass
-
-    def recv_img(self):
-        while True:
-            if not self.isConnected:
-                break
-
-            if self.recv_type != 2:
-                time.sleep(0.1)
-                continue
-
-            try:
-                length = self.recv_all(16)
-            except ConnectionAbortedError:
-                break
-
-            if len(length) == 0:
-                print("Disconnected")
-                self.recv_type = 1
-                break
-            # elif length.decode() == "HOSTS":
-            #     continue
-
-            string_data = self.recv_all(int(length))
-            data = numpy.fromstring(string_data, dtype=numpy.uint8)
-
-            decimg = cv2.imdecode(data, 1)
-            # print("=====img type : {}".format(type(decimg)))
-
-            # self.screen_window.screen_label.config(bitmap=decimg)
-        
-            cv2.imshow('CLIENT', decimg)
-
-            if cv2.waitKey(1) == ord('q'):
-                break
-            
-        cv2.destroyAllWindows()
-        
 
     def recv_all(self, count):
         buffer = b''
@@ -298,14 +237,15 @@ class Receiver:
     def disconnect(self):
         self.isConnected = False
 
+    def register_funcs(self):
+        self.key_detector = KeyDetector(self.sock)
+        self.mouse_detector = MouseDetector(self.sock)
 
-def register_funcs(sock):
-    key_detector = KeyDetector(sock)
-    mouse_detector = MouseDetector(sock)
-    # image_receiver = ImageReceiver(sock)
+        print("register finished")
 
-    print("register finished")
-    return key_detector, mouse_detector# , image_receiver
+    def unregister_funcs(self):
+        self.key_detector.listener.stop()
+        self.mouse_detector.listener.stop()
 
 
 def start_gui():
@@ -316,15 +256,15 @@ def start_gui():
     connection_window.start_window()
 
 
-def start_list_gui(sock):
+def start_list_gui(sock, ip, port):
     list_window = client_gui.GameListGUI(ip, port)
 
-    receiver = Receiver(sock, list_window, None)
+    receiver = Receiver(sock, ip, port, list_window, None)
 
     list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
     list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))
     list_window.quit_btn.config(command=lambda: disconnect(list_window, sock))
-    list_window.lol_btn.config(command=lambda: start_game_gui(sock, "LOL", list_window, receiver))
+    list_window.remote_btn.config(command=lambda: start_game_gui(sock, "REMOTE", list_window, receiver))
     list_window.kart_btn.config(command=lambda: start_game_gui(sock, "KART", list_window, receiver))
     list_window.start_window()
 
@@ -337,9 +277,16 @@ def start_game_gui(sock, game, list_window, receiver):
 
     # screen_size = receiver.screen_size
     # print("=====screen_size : {}=====".format(screen_size))
-    key_detector, mouse_detector = register_funcs(sock)
+    # receiver.key_detector, receiver.mouse_detector = register_funcs(sock)
+    receiver.register_funcs()
 
-    list_window.close_window()
+    # list_window.close_window()
+    list_window.window.withdraw()
+
+    while receiver.isConnected:
+        time.sleep(1)
+    
+    list_window.window.deiconify()
 
     # screen_window = client_gui.ScreenGUI(game, receiver.screen_size)
     # receiver.screen_window = screen_window
@@ -365,7 +312,7 @@ def connect_to(connection_window):
     # receiver = Receiver(sock, list_window, None)
 
     connection_window.close_window()
-    start_list_gui(sock)
+    start_list_gui(sock, ip, port)
 
     # list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
     # list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))
@@ -379,6 +326,8 @@ def disconnect(list_window, sock):
     try:
         sock.sendall("FINISHED".encode())
     except ConnectionResetError:
+        pass
+    except OSError:
         pass
     sock.close()
 
