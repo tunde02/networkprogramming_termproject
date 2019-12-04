@@ -4,6 +4,7 @@ import numpy
 import time
 import client_gui
 from PIL import Image
+from win32api import GetSystemMetrics
 from pynput import keyboard, mouse
 from threading import Thread
 
@@ -175,8 +176,6 @@ class Receiver:
 
                 cv2.imshow("CLIENT", decimg)
 
-                set_init_screen_position(self.screen_size)
-
                 if cv2.waitKey(1) == 27:
                     print("HOST와의 연결을 종료합니다")
 
@@ -263,6 +262,8 @@ def start_game_gui(sock, game, list_window, receiver):
 
     receiver.register_funcs()
 
+    set_init_screen_position(receiver.screen_size)
+
     # List GUI를 숨기고 대기
     list_window.window.withdraw()
 
@@ -315,12 +316,11 @@ def set_init_screen_position(screen_size):
     마우스 위치를 조정해줌
     '''
 
-    temp_window = client_gui.tkinter.Tk()
     temp_mC = mouse.Controller()
     host_screen = screen_size.split(",")
 
-    init_x = temp_window.winfo_screenwidth()/2 - host_screen[0]/2
-    init_y = temp_window.winfo_screenheight()/2 - host_screen[1]/2
+    init_x = int(GetSystemMetrics(0)/2 - int(host_screen[0])/2)
+    init_y = int(GetSystemMetrics(1)/2 - int(host_screen[1])/2)
 
     cv2.moveWindow("CLIENT", init_x, init_y)
     temp_mC.position = (init_x, init_y)
