@@ -97,12 +97,21 @@ class MsgReceiver:
             if msg[0] == "DISCONNECT":
                 print("클라이언트와의 연결이 끊어졌습니다.")
                 img_sender.isConnected = False
+                key_simulator.quit_game()
                 continue
             elif msg[0] == "GAME": # 게임 실행
                 if msg[1] == "REMOTE":
                     img_sender = start_remote_control()
                 elif msg[1] == "KART":
                     img_sender = start_kart()
+                elif msg[1] == "DONTSTARVE":
+                    img_sender = start_dont_starve()
+                elif msg[1] == "PORTAL":
+                    img_sender = start_portal()
+                elif msg[1] == "UNDERTALE":
+                    img_sender = start_undertale()
+                elif msg[1] == "DODGE":
+                    img_sender = start_dodge()
             elif msg[0] == "KEYBOARD": # 키보드 조작 수행
                 key_simulator.simulate_key(msg)
             elif msg[0] == "MOUSE": # 마우스 조작 수행
@@ -111,7 +120,6 @@ class MsgReceiver:
         print("서버와의 접속을 종료합니다")
         self.sock.sendall("FINISHED".encode())
         self.sock.close()
-
 
 
 class ImgSender:
@@ -188,6 +196,10 @@ class KeySimulator:
             else:
                 self.key_controller.release(keyDict[op[1]])
 
+    def quit_game(self):
+        with self.key_controller.pressed(Key.alt):
+            self.key_controller.press(Key.f4)
+
 
 class MouseSimulator:
     def __init__(self):
@@ -246,29 +258,173 @@ def start_kart():
             break
 
     # 실행된 카트 window를 찾기
-    kart_window = []
+    game_window = []
     isFound = False
     while not isFound:
         windows = hwndCal.getWindowSizes()
         for win in windows:
             if win[2] == "KartRider Client":
-                kart_window = win
+                game_window = win
                 isFound = True
                 break
         time.sleep(0.3)
 
     print("KartRider Start")
 
-    screen_x = kart_window[1][0]
-    screen_y = kart_window[1][1]
-    screen_width = kart_window[1][2]
-    screen_height = kart_window[1][3]
+    screen_x = game_window[1][0]
+    screen_y = game_window[1][1]
+    screen_width = game_window[1][2]
+    screen_height = game_window[1][3]
 
     # 카트window의 사이즈를 서버에 전송
     msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
     sock.sendall(msg.encode())
 
     img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
+
+    return img_sender
+
+
+def start_dont_starve():
+    global folder_x, folder_y
+
+    mouse.Controller().position = (folder_x + 240, folder_y + 250)
+    mouse.Controller().click(mouse.Button.left, 2)
+
+    # 실행된 게임 window 찾기
+    game_window = []
+    isFound = False
+    while not isFound:
+        windows = hwndCal.getWindowSizes()
+        for win in windows:
+            if win[2] == "Don't Starve Together":
+                game_window = win
+                isFound = True
+                break
+        time.sleep(0.3)
+
+    print("Don't Starve Start")
+
+    screen_x = game_window[1][0]
+    screen_y = game_window[1][1]
+    screen_width = game_window[1][2]
+    screen_height = game_window[1][3]
+
+    # 게임 window의 사이즈를 서버에 전송
+    msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
+    sock.sendall(msg.encode())
+
+    img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
+
+    mouse.Controller().position = (screen_x, screen_y)
+
+    return img_sender
+
+
+def start_portal():
+    global folder_x, folder_y
+
+    mouse.Controller().position = (folder_x + 360, folder_y + 250)
+    mouse.Controller().click(mouse.Button.left, 2)
+
+    # 실행된 게임 window 찾기
+    game_window = []
+    isFound = False
+    while not isFound:
+        windows = hwndCal.getWindowSizes()
+        for win in windows:
+            if win[2] == "Portal":
+                game_window = win
+                isFound = True
+                break
+        time.sleep(0.3)
+
+    print("Portal Start")
+
+    screen_x = game_window[1][0]
+    screen_y = game_window[1][1]
+    screen_width = game_window[1][2]
+    screen_height = game_window[1][3]
+
+    # 게임 window의 사이즈를 서버에 전송
+    msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
+    sock.sendall(msg.encode())
+
+    img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
+
+    mouse.Controller().position = (screen_x, screen_y)
+
+    return img_sender
+
+
+def start_undertale():
+    global folder_x, folder_y
+
+    mouse.Controller().position = (folder_x + 480, folder_y + 250)
+    mouse.Controller().click(mouse.Button.left, 2)
+
+    # 실행된 게임 window 찾기
+    game_window = []
+    isFound = False
+    while not isFound:
+        windows = hwndCal.getWindowSizes()
+        for win in windows:
+            if win[2] == "UNDERTALE":
+                game_window = win
+                isFound = True
+                break
+        time.sleep(0.3)
+
+    print("Undertale Start")
+
+    screen_x = game_window[1][0]
+    screen_y = game_window[1][1]
+    screen_width = game_window[1][2]
+    screen_height = game_window[1][3]
+
+    # 게임 window의 사이즈를 서버에 전송
+    msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
+    sock.sendall(msg.encode())
+
+    img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
+
+    mouse.Controller().position = (screen_x, screen_y)
+
+    return img_sender
+
+
+def start_dodge():
+    global folder_x, folder_y
+
+    mouse.Controller().position = (folder_x + 600, folder_y + 250)
+    mouse.Controller().click(mouse.Button.left, 2)
+
+    # 실행된 게임 window 찾기
+    game_window = []
+    isFound = False
+    while not isFound:
+        windows = hwndCal.getWindowSizes()
+        for win in windows:
+            if win[2] == "닷지 1.9":
+                game_window = win
+                isFound = True
+                break
+        time.sleep(0.3)
+
+    print("Dodge Start")
+
+    screen_x = game_window[1][0]
+    screen_y = game_window[1][1]
+    screen_width = game_window[1][2]
+    screen_height = game_window[1][3]
+
+    # 게임 window의 사이즈를 서버에 전송
+    msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
+    sock.sendall(msg.encode())
+
+    img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
+
+    mouse.Controller().position = (screen_x, screen_y)
 
     return img_sender
 
@@ -283,6 +439,16 @@ if __name__ == "__main__":
     sock.connect(("192.168.0.11", 1080))
     sock.sendall("host".encode())
     print("Host Start")
+
+    folder_x = 0
+    folder_y = 0
+    windows = hwndCal.getWindowSizes()
+    # games 폴더 window를 찾아 위치 저장
+    for win in windows:
+        if win[2] == "games":
+            folder_x = win[1][0]
+            folder_y = win[1][1]
+            break
 
     t = Thread(target=wait_terminate_key)
     t.start()

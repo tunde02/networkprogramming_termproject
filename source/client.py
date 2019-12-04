@@ -152,9 +152,10 @@ class Receiver:
                     self.list_window.change_list(msg[1])
                 elif msg[0] == "SCREENSIZE":
                     self.screen_size = msg[1]
+                    self.register_funcs()
+                    self.recv_type = 2
                 elif msg[0] == "DISCONNECT":
                     print("Host와의 연결 종료 확인")
-                    continue
                 else:
                     print("Invalid msg from server : {}".format(data))
             elif self.recv_type == 2:
@@ -253,8 +254,14 @@ def start_list_gui(sock, ip, port):
 
     list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
     list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))
-    list_window.remote_btn.config(command=lambda: start_game_gui(sock, "REMOTE", list_window, receiver))
-    list_window.kart_btn.config(command=lambda: start_game_gui(sock, "KART", list_window, receiver))
+
+    # game buttons
+    list_window.game_btns[0].config(command=lambda: start_game_gui(sock, "REMOTE", list_window, receiver))
+    list_window.game_btns[1].config(command=lambda: start_game_gui(sock, "KART", list_window, receiver))
+    list_window.game_btns[2].config(command=lambda: start_game_gui(sock, "DONTSTARVE", list_window, receiver))
+    list_window.game_btns[3].config(command=lambda: start_game_gui(sock, "PORTAL", list_window, receiver))
+    list_window.game_btns[4].config(command=lambda: start_game_gui(sock, "UNDERTALE", list_window, receiver))
+    list_window.game_btns[5].config(command=lambda: start_game_gui(sock, "DODGE", list_window, receiver))
 
     list_window.start_window()
 
@@ -274,8 +281,8 @@ def start_game_gui(sock, game, list_window, receiver):
 
     list_window.window.withdraw()
 
-    time.sleep(0.1)
-    receiver.register_funcs()
+    # time.sleep(0.3)
+    # receiver.register_funcs()
 
     while receiver.recv_type == 2:
         time.sleep(1)

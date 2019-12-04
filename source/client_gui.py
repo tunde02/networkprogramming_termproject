@@ -56,8 +56,13 @@ class GameListGUI:
 
         # Game List
         list_frame = tkinter.Frame(self.window, bd=1, relief="solid")
-        self.remote_btn = tkinter.Button(list_frame, text="Remote Control (0)", state="disabled", width=20, height=2, overrelief="solid")
-        self.kart_btn = tkinter.Button(list_frame, text="Kart Rider (0)", state="disabled", width=20, height=2, overrelief="solid")
+        self.game_btns = []
+        self.game_btns.append(tkinter.Button(list_frame, text="Remote Control (0)", state="disabled", width=20, height=2, overrelief="solid"))
+        self.game_btns.append(tkinter.Button(list_frame, text="Kart Rider (0)", state="disabled", width=20, height=2, overrelief="solid"))
+        self.game_btns.append(tkinter.Button(list_frame, text="Don't Starve (0)", state="disabled", width=20, height=2, overrelief="solid"))
+        self.game_btns.append(tkinter.Button(list_frame, text="Portal (0)", state="disabled", width=20, height=2, overrelief="solid"))
+        self.game_btns.append(tkinter.Button(list_frame, text="Undertale (0)", state="disabled", width=20, height=2, overrelief="solid"))
+        self.game_btns.append(tkinter.Button(list_frame, text="닷지 (0)", state="disabled", width=20, height=2, overrelief="solid"))
 
         # Set Layout
         ip_label.grid(row=0, column=0)
@@ -65,8 +70,14 @@ class GameListGUI:
         addr_frame.pack()
         addr_wrapper.pack(side="top", fill="both")
 
-        self.remote_btn.pack()
-        self.kart_btn.pack()
+        for btn in self.game_btns:
+            btn.pack()
+        # self.remote_btn.pack()
+        # self.kart_btn.pack()
+        # self.dont_starve_btn.pack()
+        # self.portal_btn.pack()
+        # self.undertale_btn.pack()
+        # self.dodge_btn.pack()
         list_frame.pack(expand=True, fill="both")
 
         self.disconnect_btn.grid(row=0, column=0)
@@ -82,11 +93,19 @@ class GameListGUI:
 
     def change_list(self, hosts):
         if int(hosts) <= 0:
-            self.remote_btn.config(text="Remote Control (" + hosts + ")", state="disabled")
-            self.kart_btn.config(text="Kart Rider (" + hosts + ")", state="disabled")
+            self.game_btns[0].config(text="Remote Control (" + hosts + ")", state="disabled")
+            self.game_btns[1].config(text="Kart Rider (" + hosts + ")", state="disabled")
+            self.game_btns[2].config(text="Don't Starve (" + hosts + ")", state="disabled")
+            self.game_btns[3].config(text="Portal (" + hosts + ")", state="disabled")
+            self.game_btns[4].config(text="Undertale (" + hosts + ")", state="disabled")
+            self.game_btns[5].config(text="닷지 (" + hosts + ")", state="disabled")
         else:
-            self.remote_btn.config(text="Remote Control (" + hosts + ")", state="normal")
-            self.kart_btn.config(text="Kart Rider (" + hosts + ")", state="normal")
+            self.game_btns[0].config(text="Remote Control (" + hosts + ")", state="normal")
+            self.game_btns[1].config(text="Kart Rider (" + hosts + ")", state="normal")
+            self.game_btns[2].config(text="Don't Starve (" + hosts + ")", state="normal")
+            self.game_btns[3].config(text="Portal (" + hosts + ")", state="normal")
+            self.game_btns[4].config(text="Undertale (" + hosts + ")", state="normal")
+            self.game_btns[5].config(text="닷지 (" + hosts + ")", state="normal")
 
 
 if __name__ == "__main__":
