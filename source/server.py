@@ -1,82 +1,16 @@
 import socket
-import keyboard
 from threading import Thread
-
-
-def run_server(ip='127.0.0.1', port=1080):
-    with socket.socket() as sock:
-        sock.bind((ip, port))
-
-        print("Server Started...")
-
-        clnts = []
-        hosts = []
-        connects = []
-        while True:
-            sock.listen(3)
-            conn, addr = sock.accept()
-            # connects.append(clntSock)
-
-            sock_type = conn.recv(10)
-
-            if sock_type.decode() == "client":
-                print("New Client Accessed")
-                new_clnt = ClientHandler(sock=conn, addr=addr, clnt_index=len(clnts))
-                clnts.append(new_clnt)
-                new_clnt.clnts = clnts
-                new_clnt.hosts = hosts
-                new_clnt.connects = connects
-
-                if len(hosts) > 0:
-                    notice_clients(clnts, hosts)
-            else:
-                print("New Host Accessed")
-                new_host = HostHandler(sock=conn, addr=addr, host_index=len(hosts))
-                hosts.append(new_host)
-                connects.append(False)
-                new_host.clnts = clnts
-                new_host.hosts = hosts
-                new_host.connects = connects
-                
-                if len(clnts) > 0:
-                    clnts[0].hosts = hosts
-                    clnts[0].connects = connects
-                    notice_clients(clnts, hosts)
-
-        sock.close()
-        print("Server end")
-
-
-def find_host(connects):
-    print("===connects' len : {}===".format(len(connects)))
-    i = 0
-    for temp in connects:
-        if temp is False:
-            print("find host at : {}".format(i))
-            return i
-        i = i + 1
-
-
-def notice_clients(clnts, hosts):
-    notice = "HOSTS|" + str(len(hosts))
-    for i in clnts:
-        if i is not None:
-            i.sock.sendall(notice.encode())
 
 
 class ClientHandler:
     BUFSIZE = 1024
     terminator = "FINISHED"
-    clnts = []
-    hosts = []
-    connects = []
 
-    def __init__(self, sock, addr, clnt_index):
+    def __init__(self, sock, addr):
         self.sock = sock
         self.addr = addr
         self.host = None
-        self.clnt_index = clnt_index
-        self.connects_index = 0
+        self.connection_index = -1
 
         t = Thread(target=self.recv_msg)
         t.start()
@@ -85,144 +19,76 @@ class ClientHandler:
         while True:
             try:
                 data = self.sock.recv(self.BUFSIZE)
-            except ConnectionAbortedError:
+            except ConnectionResetError:
+                print("Client{}와의 연결이 끊겼습니다".format(self.addr))
+                disconnect_clnt(self)
                 break
 
             msg = data.decode().split("|")
 
             if msg[0] == self.terminator:
-                print("Client Exited")
-                self.sock.close()
-                self.clnts[self.clnt_index] = None
-                if len(self.connects) > 0:
-                    self.connects[self.connects_index] = False
-                    self.connects_index = 0
+                print("Client{}가 접속을 종료하였습니다".format(self.addr))
+                disconnect_clnt(self)
                 break
             elif msg[0] == "CONNECT":
-                print("match client to host : " + str(data))
-                self.connect_host(msg[1])
-                # break
+                self.connection_index = link(self)
+                self.host.sendall(("GAME|" + msg[1] + "|").encode())
             elif msg[0] == "DISCONNECT":
-                print("disconnect client with host")
-                self.disconnect_host()
+                unlink(self.connection_index)
                 continue
 
             if self.host is not None:
-                self.host.sock.sendall(data)
-
-            # print('Received : {} << {}'.format(msg, self.addr))
-            # self.host.sendall(data)
-
-    def connect_host(self, game):
-        self.connects_index = find_host(self.connects)
-        self.host = self.hosts[self.connects_index]
-        self.connects[self.connects_index] = True
-        self.host.connect_client(self.sock)
-
-        print("GAME|" + game)
-        self.host.sock.sendall(("GAME|" + game).encode())
-    
-    def disconnect_host(self):
-        self.host.sock.sendall("DISCONNECT".encode())
-        self.host.disconnect_client()
-        print("disconnection message sent")
-        self.host = None
-        self.connects[self.connects_index] = False
-
-        self.sock.sendall(str("HOSTS|" + str(len(self.hosts))).encode())
+                try:
+                    self.host.sendall(data)
+                except OSError:
+                    unlink(self.connection_index)
 
 
 class HostHandler:
     BUFSIZE = 1024
     terminator = "FINISHED"
-    clnts = []
-    hosts = []
-    connects = []
 
-    def __init__(self, sock, addr, host_index):
+    def __init__(self, sock, addr):
         self.sock = sock
         self.addr = addr
         self.client = None
-        self.host_index = host_index
-        self.connects_index = 0
+        self.connection_index = -1
 
         t = Thread(target=self.recv_msg)
         t.start()
 
     def recv_msg(self):
         while True:
-                # msg = self.sock.recv(64)
+            try:
+                length = self.sock.recv(32) # 64
+            except ConnectionResetError:
+                print("Host{}와의 연결이 끊겼습니다".format(self.addr))
+                disconnect_host(self)
+                break
 
-                # if msg is None:
-                #     print("deliver_image length is None break")
-                #     break
-                # elif msg.decode().split("|")[0] == "SCREENSIZE":
-                #     print("===send size to client===")
-                #     self.client.send(msg)
-                #     continue
-            # String형의 이미지를 수신받아서 이미지로 변환하고 화면에 출력
-            length = self.sock.recv(64)
-            # print(length)
-            # if length[0] == b"\x":
-            #     print("deliver_image length is None break")
-            #     break
             try:
                 msg = length.decode().split("|")
                 if msg[0] == "SCREENSIZE":
-                    print("===send size to client===")
-                    self.client.send(length)
+                    self.client.sendall(length)
                     continue
                 elif msg[0] == self.terminator:
-                    self.client.sendall("DISCONNECT".encode())
+                    print("Host{}가 접속을 종료하였습니다".format(self.addr))
+                    disconnect_host(self)
                     break
             except UnicodeDecodeError:
-                print("unicode error")
+                print("Unicode Error")
                 pass
-
-            # if self.client is None:
-            #     continue
 
             string_data = self.recv_image(int(length))
 
-            # host와 연결된 client에게 그대로 보냄
+            # host와 연결된 client에게 이미지를 그대로 보냄
             try:
                 self.client.send(str(len(string_data)).ljust(16).encode())
                 self.client.send(string_data)
             except AttributeError:
                 continue
-
-        self.sock.close()
-        print("hosthandler end")
-
-    def connect_client(self, sock):
-        self.client = sock
-
-    def disconnect_client(self):
-        self.client.sendall("DISCONNECT".encode())
-        # self.client.disconnect_host()
-        # print("disconnection message sent")
-        self.client = None
-        self.connects[self.connects_index] = False
-
-        notice_clients(self.clnts, self.hosts)
-
-    def deliver_image(self):
-        while True:
-            # String형의 이미지를 수신받아서 이미지로 변환하고 화면에 출력
-            length = self.recv_image(16)
-
-            if length is None:
-                print("deliver_image length is None break")
-                break
-            elif length.decode() == "FINISHED":
-                print("host terminated")
-                self.sock.close()
-                break
-
-            string_data = self.recv_image(int(length))
-            # host와 연결된 client에게 그대로 보냄
-            self.client.send(str(len(string_data)).ljust(16).encode())
-            self.client.send(string_data)
+            except OSError:
+                self.sock.sendall("DISCONNECT|".encode())
 
     def recv_image(self, count):
         buffer = b''
@@ -244,16 +110,153 @@ class HostHandler:
         return buffer
 
 
-def esc_pressed():
-    keyboard.wait('esc')
+def run_server(ip='127.0.0.1', port=1080):
+    global hosts, clnts, connections, linkable_hosts
+
+    with socket.socket() as sock:
+        sock.bind((ip, port))
+
+        print("Server Started...")
+
+        while True:
+            sock.listen(3)
+            conn, addr = sock.accept()
+
+            sock_type = conn.recv(10)
+
+            if sock_type.decode() == "client":
+                print("New Client Accessed - {}".format(addr))
+                new_clnt = ClientHandler(sock=conn, addr=addr)
+                clnts.append(new_clnt)
+
+                if len(hosts) > 0:
+                    notice_clients()
+            else:
+                print("New Host Accessed - {}".format(addr))
+                new_host = HostHandler(sock=conn, addr=addr)
+                hosts.append(new_host)
+                linkable_hosts += 1
+
+                connections.append(0)
+
+                if len(clnts) > 0:
+                    notice_clients()
+
+        sock.close()
+
+
+def disconnect_clnt(clnt):
+    global clnts, connections
+
+    clnt_index = clnts.index(clnt)
+
+    clnts.remove(clnt)
+
+    clnt.sock.close()
+
+
+def disconnect_host(host):
+    global hosts, connections, linkable_hosts
+
+    host_index = hosts.index(host)
+
+    hosts.remove(host)
+
+    host.sock.close()
+
+    notice_clients()
+
+
+def link(clnt):
+    '''
+    연결 가능한 Host를 찾아 Client와 연결하고
+    connection_index를 반환
+    '''
+
+    global clnts, hosts, connections, linkable_hosts
+
+    print("Client와 Host의 연결을 시작합니다")
+
+    # 연결 가능한 Host가 없으면 link()를 호출할 수도 없으므로 예외처리 필요 없음
+    connection_index = connections.index(0)
+    clnt_index = clnts.index(clnt)
+
+    # 연결을 관리하기위한 conneciton 생성
+    connections[connection_index] = (clnt_index, connection_index)
+
+    # Client와 Host 연결
+    clnts[clnt_index].host = hosts[connection_index].sock
+    clnts[clnt_index].connection_index = connection_index
+    hosts[connection_index].client = clnts[clnt_index].sock
+    hosts[connection_index].connection_index = connection_index
+
+    linkable_hosts -= 1
+
+    notice_clients()
+
+    return connection_index
+
+
+def unlink(connection_index):
+    '''
+    인자값으로 들어온 connection_index를 이용해 해당 인덱스의
+    연결을 끊음
+    '''
+
+    global clnts, hosts, connections, linkable_hosts
+
+    print("Client와 Host의 연결을 종료합니다")
+
+    clnt_index = connections[connection_index][0]
+    host_index = connections[connection_index][1]
+
+    clnts[clnt_index].host = None
+    clnts[clnt_index].connection_index = -1
+    hosts[host_index].client = None
+    hosts[connection_index].connection_index = -1
+
+    # Client와 Host에게 연결이 끊어졌음을 알림
+    try:
+        clnts[clnt_index].sock.sendall("DISCONNECT|".encode())
+    except OSError:
+        print("Client에게 DISCONNECT 메시지 전송 실패")
+        pass
+
+    try:
+        hosts[host_index].sock.sendall("DISCONNECT|".encode())
+    except OSError:
+        print("Host에게 DISCONNECT 메시지 전송 실패")
+        pass
+
+    connections[connection_index] = 0
+
+    linkable_hosts += 1
+
+    notice_clients()
+
+
+def notice_clients():
+    '''
+    Host와 연결되어 있지 않은 모든 Client들에게
+    연결 가능한 Host의 수를 알리는 함수
+    '''
+
+    global clnts, linkable_hosts
+
+    notice = "HOSTS|" + str(linkable_hosts) + "|"
+    print("<NOTICE> : {}".format(notice))
+
+    for c in clnts:
+        if c.connection_index == -1:
+            c.sock.sendall(notice.encode())
 
 
 if __name__ == '__main__':
-    t = Thread(target=esc_pressed)
-    t.start()
+    clnts = []
+    hosts = []
+    connections = []
+    linkable_hosts = 0
 
     run_server()
 
-    t.join()
-
-    print("server end")
+    print("Server End")

@@ -52,7 +52,7 @@ class GameListGUI:
         btn_wrapper = tkinter.Frame(self.window, bd=1, relief="solid")
         btn_frame = tkinter.Frame(btn_wrapper)
         self.disconnect_btn = tkinter.Button(btn_frame, text="Disconnect", width=20, height=2, overrelief="solid")
-        self.quit_btn = tkinter.Button(btn_frame, text="Quit", width=20, height=2, overrelief="solid", command=self.window.destroy)
+        # self.quit_btn = tkinter.Button(btn_frame, text="Quit", width=20, height=2, overrelief="solid", command=self.window.destroy)
 
         # Game List
         list_frame = tkinter.Frame(self.window, bd=1, relief="solid")
@@ -69,8 +69,8 @@ class GameListGUI:
         self.kart_btn.pack()
         list_frame.pack(expand=True, fill="both")
 
-        self.disconnect_btn.grid(row=0, column=0, padx=25)
-        self.quit_btn.grid(row=0, column=1, padx=25)
+        self.disconnect_btn.grid(row=0, column=0)
+        # self.quit_btn.grid(row=0, column=1, padx=25)
         btn_frame.pack()
         btn_wrapper.pack(side="bottom", fill="both")
 
