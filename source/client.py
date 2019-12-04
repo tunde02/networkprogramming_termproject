@@ -238,7 +238,7 @@ def start_list_gui(sock, ip, port):
 
     list_window = client_gui.GameListGUI(ip, port)
 
-    receiver = Receiver(sock, ip, port, list_window, None)
+    receiver = Receiver(sock, ip, port, list_window)
 
     list_window.window.protocol("WM_DELETE_WINDOW", lambda: disconnect(list_window, sock))
     list_window.disconnect_btn.config(command=lambda: disconnect(list_window, sock))

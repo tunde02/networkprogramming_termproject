@@ -244,7 +244,6 @@ def notice_clients():
     global clnts, linkable_hosts
 
     notice = "HOSTS|" + str(linkable_hosts) + "|"
-    print("<NOTICE> : {}".format(notice))
 
     for c in clnts:
         if c.connection_index == -1:
