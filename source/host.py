@@ -222,6 +222,8 @@ def start_remote_control():
 
     img_sender = ImgSender(sock, (0, 0, 1920, 1080))
 
+    mouse.Controller().position = (0, 0)
+
     return img_sender
 
 
