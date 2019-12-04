@@ -257,6 +257,6 @@ if __name__ == '__main__':
     connections = []
     linkable_hosts = 0
 
-    run_server()
+    run_server("192.168.0.11")
 
     print("Server End")

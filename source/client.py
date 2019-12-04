@@ -115,12 +115,11 @@ class Receiver:
     key_detector = None
     mouse_detector = None
 
-    def __init__(self, sock, ip, port, list_window, screen_window):
+    def __init__(self, sock, ip, port, list_window):
         self.sock = sock
         self.ip = ip
         self.port = port
         self.list_window = list_window
-        self.screen_window = screen_window
         self.screen_size = ""
 
         t = Thread(target=self.recv_from, daemon=True)
@@ -131,7 +130,6 @@ class Receiver:
             if self.recv_type == 1:
                 try:
                     data = self.sock.recv(256)
-                    print("received data {}:".format(data))
                 except ConnectionAbortedError:
                     print("서버와의 연결이 끊어졌습니다")
                     break
@@ -176,6 +174,8 @@ class Receiver:
                 decimg = cv2.imdecode(data, 1)
 
                 cv2.imshow("CLIENT", decimg)
+
+                set_init_screen_position(self.screen_size)
 
                 if cv2.waitKey(1) == 27:
                     print("HOST와의 연결을 종료합니다")
@@ -308,6 +308,22 @@ def disconnect(list_window, sock):
 
     start_gui()
 
+
+def set_init_screen_position(screen_size):
+    '''
+    cv2를 이용해서 화면을 띄울 때, 그 화면의 첫 위치와
+    마우스 위치를 조정해줌
+    '''
+
+    temp_window = client_gui.tkinter.Tk()
+    temp_mC = mouse.Controller()
+    host_screen = screen_size.split(",")
+
+    init_x = temp_window.winfo_screenwidth()/2 - host_screen[0]/2
+    init_y = temp_window.winfo_screenheight()/2 - host_screen[1]/2
+
+    cv2.moveWindow("CLIENT", init_x, init_y)
+    temp_mC.position = (init_x, init_y)
 
 if __name__ == '__main__':
     # ip = ""
