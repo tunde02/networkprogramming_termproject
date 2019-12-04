@@ -136,7 +136,7 @@ class ImgSender:
     def screen_send_thread(self):
         while self.isConnected:
             # 스크린샷 찍기
-            time.sleep(0.025)
+            # time.sleep(0.025)
             try:
                 imgGrab = ImageGrab.grab(bbox=self.screen_box)
             except OSError:
@@ -145,7 +145,7 @@ class ImgSender:
             cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
 
             # 스크린샷에 커서 그리기
-            # cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
+            cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
 
             # 추출한 이미지를 String 형태로 인코딩
             encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]

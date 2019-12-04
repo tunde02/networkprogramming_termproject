@@ -224,6 +224,8 @@ class Receiver:
 
         self.mouse_detector = MouseDetector(self.sock, (init_x, init_y))
 
+        cv2.moveWindow("CLIENT", init_x, init_y)
+
         print("키보드, 마우스 리스너 등록 완료")
 
     def unregister_funcs(self):
@@ -280,9 +282,6 @@ def start_game_gui(sock, game, list_window, receiver):
     sock.sendall(msg.encode())
 
     list_window.window.withdraw()
-
-    # time.sleep(0.3)
-    # receiver.register_funcs()
 
     while receiver.recv_type == 2:
         time.sleep(1)
