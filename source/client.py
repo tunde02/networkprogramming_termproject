@@ -224,6 +224,7 @@ class Receiver:
 
         self.mouse_detector = MouseDetector(self.sock, (init_x, init_y))
 
+        cv2.namedWindow("CLIENT")
         cv2.moveWindow("CLIENT", init_x, init_y)
 
         print("키보드, 마우스 리스너 등록 완료")

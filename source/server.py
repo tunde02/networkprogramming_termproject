@@ -148,21 +148,17 @@ def run_server(ip='127.0.0.1', port=1080):
 def disconnect_clnt(clnt):
     global clnts, connections
 
-    clnt_index = clnts.index(clnt)
-
     clnts.remove(clnt)
-
     clnt.sock.close()
 
 
 def disconnect_host(host):
     global hosts, connections, linkable_hosts
 
-    host_index = hosts.index(host)
-
     hosts.remove(host)
-
     host.sock.close()
+
+    linkable_hosts -= 1
 
     notice_clients()
 

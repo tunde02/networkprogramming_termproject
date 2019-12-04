@@ -101,17 +101,17 @@ class MsgReceiver:
                 continue
             elif msg[0] == "GAME": # 게임 실행
                 if msg[1] == "REMOTE":
-                    img_sender = start_remote_control()
+                    img_sender = start_remote_control(mouse_simulator)
                 elif msg[1] == "KART":
-                    img_sender = start_kart()
+                    img_sender = start_kart(mouse_simulator)
                 elif msg[1] == "DONTSTARVE":
-                    img_sender = start_dont_starve()
+                    img_sender = start_dont_starve(mouse_simulator)
                 elif msg[1] == "PORTAL":
-                    img_sender = start_portal()
+                    img_sender = start_portal(mouse_simulator)
                 elif msg[1] == "UNDERTALE":
-                    img_sender = start_undertale()
+                    img_sender = start_undertale(mouse_simulator)
                 elif msg[1] == "DODGE":
-                    img_sender = start_dodge()
+                    img_sender = start_dodge(mouse_simulator)
             elif msg[0] == "KEYBOARD": # 키보드 조작 수행
                 key_simulator.simulate_key(msg)
             elif msg[0] == "MOUSE": # 마우스 조작 수행
@@ -204,6 +204,8 @@ class KeySimulator:
 class MouseSimulator:
     def __init__(self):
         self.mouse_controller = mouse.Controller()
+        self.screen_x = 0
+        self.screen_y = 0
 
     def simulate_mouse(self, op):
         '''
@@ -227,10 +229,14 @@ class MouseSimulator:
             elif op[2] == "DOWN":
                 self.mouse_controller.scroll(0, -25)
         else:
-            self.mouse_controller.position = (op[1].split(",")[0], op[1].split(",")[1])
+            self.mouse_controller.position = (int(op[1].split(",")[0]) + self.screen_x, int(op[1].split(",")[1]) + self.screen_y)
+
+    def set_screen_pos(self, pos):
+        self.screen_x = pos[0]
+        self.screen_y = pos[1]
 
 
-def start_remote_control():
+def start_remote_control(mouse_simulator):
     print("Remote Control Start!")
     try:
         sock.sendall("SCREENSIZE|1920,1080".encode())
@@ -239,22 +245,21 @@ def start_remote_control():
 
     img_sender = ImgSender(sock, (0, 0, 1920, 1080))
 
-    mouse.Controller().position = (0, 0)
+    mouse_simulator.mouse_controller.position = (0, 0)
+    mouse_simulator.set_screen_pos((0, 0))
 
     return img_sender
 
 
-def start_kart():
+def start_kart(mouse_simulator):
     windows = hwndCal.getWindowSizes()
     # 넥슨 플러그 window를 찾아 카트를 실행
     for win in windows:
         if win[2] == "NexonPlug":
             x = win[1][0] + 300
             y = win[1][1] + 40
-            mC = mouse.Controller()
-            kC = keyboard.Controller()
-            mC.position = (x, y)
-            mC.click(mouse.Button.left)
+            mouse_simulator.position = (x, y)
+            mouse_simulator.click(mouse.Button.left)
             break
 
     # 실행된 카트 window를 찾기
@@ -282,14 +287,17 @@ def start_kart():
 
     img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
 
+    mouse_simulator.mouse_controller.position = (screen_x, screen_y)
+    mouse_simulator.set_screen_pos((screen_x, screen_y))
+
     return img_sender
 
 
-def start_dont_starve():
+def start_dont_starve(mouse_simulator):
     global folder_x, folder_y
 
-    mouse.Controller().position = (folder_x + 240, folder_y + 250)
-    mouse.Controller().click(mouse.Button.left, 2)
+    mouse_simulator.mouse_controller.position = (folder_x + 240, folder_y + 250)
+    mouse_simulator.mouse_controller.click(mouse.Button.left, 2)
 
     # 실행된 게임 window 찾기
     game_window = []
@@ -316,16 +324,17 @@ def start_dont_starve():
 
     img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
 
-    mouse.Controller().position = (screen_x, screen_y)
+    mouse_simulator.mouse_controller.position = (screen_x, screen_y)
+    mouse_simulator.set_screen_pos((screen_x, screen_y))
 
     return img_sender
 
 
-def start_portal():
+def start_portal(mouse_simulator):
     global folder_x, folder_y
 
-    mouse.Controller().position = (folder_x + 360, folder_y + 250)
-    mouse.Controller().click(mouse.Button.left, 2)
+    mouse_simulator.mouse_controller.position = (folder_x + 360, folder_y + 250)
+    mouse_simulator.mouse_controller.click(mouse.Button.left, 2)
 
     # 실행된 게임 window 찾기
     game_window = []
@@ -352,16 +361,17 @@ def start_portal():
 
     img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
 
-    mouse.Controller().position = (screen_x, screen_y)
+    mouse_simulator.mouse_controller.position = (screen_x, screen_y)
+    mouse_simulator.set_screen_pos((screen_x, screen_y))
 
     return img_sender
 
 
-def start_undertale():
+def start_undertale(mouse_simulator):
     global folder_x, folder_y
 
-    mouse.Controller().position = (folder_x + 480, folder_y + 250)
-    mouse.Controller().click(mouse.Button.left, 2)
+    mouse_simulator.mouse_controller.position = (folder_x + 480, folder_y + 250)
+    mouse_simulator.mouse_controller.click(mouse.Button.left, 2)
 
     # 실행된 게임 window 찾기
     game_window = []
@@ -388,16 +398,17 @@ def start_undertale():
 
     img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
 
-    mouse.Controller().position = (screen_x, screen_y)
+    mouse_simulator.mouse_controller.position = (screen_x, screen_y)
+    mouse_simulator.set_screen_pos((screen_x, screen_y))
 
     return img_sender
 
 
-def start_dodge():
+def start_dodge(mouse_simulator):
     global folder_x, folder_y
 
-    mouse.Controller().position = (folder_x + 600, folder_y + 250)
-    mouse.Controller().click(mouse.Button.left, 2)
+    mouse_simulator.mouse_controller.position = (folder_x + 600, folder_y + 250)
+    mouse_simulator.mouse_controller.click(mouse.Button.left, 2)
 
     # 실행된 게임 window 찾기
     game_window = []
@@ -424,7 +435,8 @@ def start_dodge():
 
     img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
 
-    mouse.Controller().position = (screen_x, screen_y)
+    mouse_simulator.mouse_controller.position = (screen_x, screen_y)
+    mouse_simulator.set_screen_pos((screen_x, screen_y))
 
     return img_sender
 
