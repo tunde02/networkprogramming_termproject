@@ -49,8 +49,9 @@ class MouseDetector:
     메시지를 생성하여 서버로 전송
     '''
 
-    def __init__(self, sock):
+    def __init__(self, sock, init_pos):
         self.sock = sock
+        self.init_pos = init_pos
         self.listener = mouse.Listener(
             on_move=self.on_move,
             on_click=self.on_click,
@@ -60,7 +61,7 @@ class MouseDetector:
         self.listener.start()
 
     def on_move(self, x, y):
-        data = "MOUSE|" + str(x) + "," + str(y) + "|MOVE|"
+        data = "MOUSE|" + str(x - self.init_pos[0]) + "," + str(y - self.init_pos[1]) + "|MOVE|"
         try:
             self.sock.sendall(data.encode())
         except ConnectionAbortedError:
@@ -176,7 +177,7 @@ class Receiver:
 
                 cv2.imshow("CLIENT", decimg)
 
-                if cv2.waitKey(1) == 27:
+                if cv2.waitKey(1) == 96:
                     print("HOST와의 연결을 종료합니다")
 
                     cv2.destroyAllWindows()
@@ -209,7 +210,18 @@ class Receiver:
 
     def register_funcs(self):
         self.key_detector = KeyDetector(self.sock)
-        self.mouse_detector = MouseDetector(self.sock)
+
+        host_screen = self.screen_size.split(",")
+        i = GetSystemMetrics(0)/2
+        j = GetSystemMetrics(1)/2
+        a = int(host_screen[0])/2
+        b = int(host_screen[1])/2
+        init_x = int(i - a) + 15
+        init_y = int(j - b) + 35
+
+        mouse.Controller().position = (init_x, init_y)
+
+        self.mouse_detector = MouseDetector(self.sock, (init_x, init_y))
 
         print("키보드, 마우스 리스너 등록 완료")
 
@@ -260,12 +272,10 @@ def start_game_gui(sock, game, list_window, receiver):
 
     sock.sendall(msg.encode())
 
-    receiver.register_funcs()
-
-    set_init_screen_position(receiver.screen_size)
-
-    # List GUI를 숨기고 대기
     list_window.window.withdraw()
+
+    time.sleep(0.1)
+    receiver.register_funcs()
 
     while receiver.recv_type == 2:
         time.sleep(1)
@@ -309,21 +319,6 @@ def disconnect(list_window, sock):
 
     start_gui()
 
-
-def set_init_screen_position(screen_size):
-    '''
-    cv2를 이용해서 화면을 띄울 때, 그 화면의 첫 위치와
-    마우스 위치를 조정해줌
-    '''
-
-    temp_mC = mouse.Controller()
-    host_screen = screen_size.split(",")
-
-    init_x = int(GetSystemMetrics(0)/2 - int(host_screen[0])/2)
-    init_y = int(GetSystemMetrics(1)/2 - int(host_screen[1])/2)
-
-    cv2.moveWindow("CLIENT", init_x, init_y)
-    temp_mC.position = (init_x, init_y)
 
 if __name__ == '__main__':
     # ip = ""
