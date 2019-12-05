@@ -79,7 +79,10 @@ class HostHandler:
                 print("Unicode Error")
                 pass
 
-            string_data = self.recv_image(int(length))
+            try:
+                string_data = self.recv_image(int(length))
+            except ValueError:
+                continue
 
             # host와 연결된 client에게 이미지를 그대로 보냄
             try:
