@@ -217,8 +217,8 @@ class Receiver:
         j = GetSystemMetrics(1)/2
         a = int(host_screen[0])/2
         b = int(host_screen[1])/2
-        init_x = int(i - a) + 15
-        init_y = int(j - b) + 35
+        init_x = int(i - a)
+        init_y = int(j - b)
 
         mouse.Controller().position = (init_x, init_y)
 

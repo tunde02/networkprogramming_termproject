@@ -145,7 +145,7 @@ class ImgSender:
             cv_img = cv2.cvtColor(numpy.array(imgGrab), cv2.COLOR_RGB2BGR)
 
             # 스크린샷에 커서 그리기
-            cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
+            # cv2.circle(cv_img, pg.position(), 7, (255, 0, 0), -1)
 
             # 추출한 이미지를 String 형태로 인코딩
             encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
@@ -229,7 +229,7 @@ class MouseSimulator:
             elif op[2] == "DOWN":
                 self.mouse_controller.scroll(0, -25)
         else:
-            self.mouse_controller.position = (int(op[1].split(",")[0]) + self.screen_x, int(op[1].split(",")[1]) + self.screen_y)
+            self.mouse_controller.position = (int(op[1].split(",")[0]) + self.screen_x, int(op[1].split(",")[1]) + self.screen_y - 30)
 
     def set_screen_pos(self, pos):
         self.screen_x = pos[0]
@@ -314,7 +314,7 @@ def start_dont_starve(mouse_simulator):
     print("Don't Starve Start")
 
     screen_x = game_window[1][0]
-    screen_y = game_window[1][1]
+    screen_y = game_window[1][1] + 25
     screen_width = game_window[1][2]
     screen_height = game_window[1][3]
 
@@ -351,7 +351,7 @@ def start_portal(mouse_simulator):
     print("Portal Start")
 
     screen_x = game_window[1][0]
-    screen_y = game_window[1][1]
+    screen_y = game_window[1][1] + 25
     screen_width = game_window[1][2]
     screen_height = game_window[1][3]
 
@@ -388,7 +388,7 @@ def start_undertale(mouse_simulator):
     print("Undertale Start")
 
     screen_x = game_window[1][0]
-    screen_y = game_window[1][1]
+    screen_y = game_window[1][1] + 25
     screen_width = game_window[1][2]
     screen_height = game_window[1][3]
 
@@ -425,7 +425,7 @@ def start_dodge(mouse_simulator):
     print("Dodge Start")
 
     screen_x = game_window[1][0]
-    screen_y = game_window[1][1]
+    screen_y = game_window[1][1] + 25
     screen_width = game_window[1][2]
     screen_height = game_window[1][3]
 
