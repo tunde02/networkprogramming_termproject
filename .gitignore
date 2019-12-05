@@ -1,4 +1,4 @@
 .vscode
-.idea
 net
 source/__pycache__
+*.bat

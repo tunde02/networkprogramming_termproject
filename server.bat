@@ -1,1 +1,0 @@
-net\Scripts\activate && cd source && python server.py
