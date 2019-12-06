@@ -6,7 +6,7 @@ class ClientGUI:
         self.initUI()
 
     def initUI(self):
-        self.window=tkinter.Tk()
+        self.window = tkinter.Tk()
         self.window.title("Client")
         self.window.geometry("400x200+300+300")
         self.window.resizable(False, False)
@@ -39,7 +39,7 @@ class GameListGUI:
         self.initUI()
 
     def initUI(self):
-        self.window=tkinter.Tk()
+        self.window = tkinter.Tk()
         self.window.title("Game List")
         self.window.geometry("600x700+300+200")
         self.window.resizable(False, False)
@@ -106,6 +106,24 @@ class GameListGUI:
             self.game_btns[3].config(text="Portal (" + hosts + ")", state="normal")
             self.game_btns[4].config(text="Undertale (" + hosts + ")", state="normal")
             self.game_btns[5].config(text="닷지 (" + hosts + ")", state="normal")
+
+
+class ErrorGUI:
+    def __init__(self, error_msg):
+        self.initUI(error_msg)
+
+    def initUI(self, error_msg):
+        self.window = tkinter.Tk()
+        self.window.title("Error")
+        self.window.geometry("400x100+300+300")
+        self.window.resizable(False, False)
+
+        error_label = tkinter.Label(self.window, text=error_msg, width=25, height=2, bd=1, pady=10)
+
+        error_label.pack()
+
+    def start_window(self):
+        self.window.mainloop()
 
 
 if __name__ == "__main__":

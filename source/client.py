@@ -297,16 +297,53 @@ def connect_to(connection_window):
     '''
 
     ip = connection_window.ip_entry.get()
-    port = int(connection_window.port_entry.get())
+    port = connection_window.port_entry.get()
+
+    if (not ip_check(ip)) or (not port_check(port)):
+        format_error_window = client_gui.ErrorGUI("ip또는 port의 형식이\n잘못되었습니다!")
+        format_error_window.start_window()
+        return
 
     sock = socket.socket()
-    sock.connect((ip, port))
+    try:
+        sock.connect((ip, int(port)))
+    except ConnectionRefusedError:
+        error_window = client_gui.ErrorGUI("서버 접속이 실패하였습니다!")
+        error_window.start_window()
+        return
 
     sock.sendall("client".encode())
 
     connection_window.close_window()
 
     start_list_gui(sock, ip, port)
+
+
+def ip_check(ip):
+    chunks = ip.split(".")
+    if len(chunks) != 4:
+        return False
+
+    for i in chunks:
+        try:
+            if int(i) < 0 or len(i) > 3:
+                return False
+        except ValueError:
+            return False
+
+    return True
+
+
+def port_check(port):
+    try:
+        _port = int(port)
+    except ValueError:
+        return False
+
+    if _port < 1024 or _port > 65535:
+        return False
+
+    return True
 
 
 def disconnect(list_window, sock):

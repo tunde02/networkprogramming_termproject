@@ -448,7 +448,7 @@ def wait_terminate_key():
 
 if __name__ == "__main__":
     sock = socket.socket()
-    sock.connect(("192.168.0.11", 1080))
+    sock.connect(("127.0.0.1", 1080))
     sock.sendall("host".encode())
     print("Host Start")
 
