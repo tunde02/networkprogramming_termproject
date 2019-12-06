@@ -258,11 +258,11 @@ def start_kart(mouse_simulator):
         if win[2] == "NexonPlug":
             x = win[1][0] + 300
             y = win[1][1] + 40
-            mouse_simulator.position = (x, y)
-            mouse_simulator.click(mouse.Button.left)
+            mouse_simulator.mouse_controller.position = (x, y)
+            mouse_simulator.mouse_controller.click(mouse.Button.left)
             break
 
-    # 실행된 카트 window를 찾기
+    # 실행된 게임 window를 찾기
     game_window = []
     isFound = False
     while not isFound:
@@ -277,11 +277,11 @@ def start_kart(mouse_simulator):
     print("KartRider Start")
 
     screen_x = game_window[1][0]
-    screen_y = game_window[1][1]
+    screen_y = game_window[1][1] + 25
     screen_width = game_window[1][2]
     screen_height = game_window[1][3]
 
-    # 카트window의 사이즈를 서버에 전송
+    # 게임 window의 사이즈를 서버에 전송
     msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
     sock.sendall(msg.encode())
 
@@ -448,7 +448,7 @@ def wait_terminate_key():
 
 if __name__ == "__main__":
     sock = socket.socket()
-    sock.connect(("127.0.0.1", 1080))
+    sock.connect(("192.168.0.11", 1080))
     sock.sendall("host".encode())
     print("Host Start")
 

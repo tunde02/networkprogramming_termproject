@@ -160,7 +160,7 @@ class Receiver:
                     print("Invalid msg from server : {}".format(data))
             elif self.recv_type == 2:
                 try:
-                    length = self.recv_all(16)
+                    length = self.sock.recv(16)
                 except ConnectionAbortedError:
                     break
                 except ConnectionResetError:
@@ -171,7 +171,19 @@ class Receiver:
                     self.finish()
                     break
 
-                string_data = self.recv_all(int(length))
+                try:
+                    string_data = self.recv_all(int(length))
+                except ValueError:
+                    if length == b"DISCONNECT|":
+                        print("Host와의 연결이 끊겼습니다")
+                        cv2.destroyAllWindows()
+                        self.recv_type = 1
+                        self.unregister_funcs()
+                        continue
+                    else:
+                        print("Unknown Error")
+                        break
+
                 data = numpy.fromstring(string_data, dtype=numpy.uint8)
 
                 decimg = cv2.imdecode(data, 1)
@@ -179,7 +191,7 @@ class Receiver:
                 cv2.imshow("CLIENT", decimg)
 
                 if cv2.waitKey(1) == 96:
-                    print("HOST와의 연결을 종료합니다")
+                    print("Host와의 연결을 종료합니다")
 
                     cv2.destroyAllWindows()
 
@@ -280,7 +292,12 @@ def start_game_gui(sock, game, list_window, receiver):
     receiver.recv_type = 2
     msg = "CONNECT|" + game + "|"
 
-    sock.sendall(msg.encode())
+    try:
+        sock.sendall(msg.encode())
+    except ConnectionResetError:
+        error_window = client_gui.ErrorGUI("서버와의 연결이 끊겼습니다!")
+        error_window.start_window()
+        return
 
     list_window.window.withdraw()
 

@@ -151,12 +151,18 @@ def run_server(ip='127.0.0.1', port=1080):
 def disconnect_clnt(clnt):
     global clnts, connections
 
+    if clnt.connection_index != -1:
+        unlink(clnt.connection_index)
+
     clnts.remove(clnt)
     clnt.sock.close()
 
 
 def disconnect_host(host):
     global hosts, connections, linkable_hosts
+
+    if host.connection_index != -1:
+        unlink(host.connection_index)
 
     hosts.remove(host)
     host.sock.close()
@@ -218,13 +224,13 @@ def unlink(connection_index):
     try:
         clnts[clnt_index].sock.sendall("DISCONNECT|".encode())
     except OSError:
-        print("Client에게 DISCONNECT 메시지 전송 실패")
+        # print("Client에게 DISCONNECT 메시지 전송 실패")
         pass
 
     try:
         hosts[host_index].sock.sendall("DISCONNECT|".encode())
     except OSError:
-        print("Host에게 DISCONNECT 메시지 전송 실패")
+        # print("Host에게 DISCONNECT 메시지 전송 실패")
         pass
 
     connections[connection_index] = 0
@@ -255,6 +261,6 @@ if __name__ == '__main__':
     connections = []
     linkable_hosts = 0
 
-    run_server("127.0.0.1")
+    run_server("192.168.0.11")
 
     print("Server End")
