@@ -167,8 +167,6 @@ def disconnect_host(host):
     hosts.remove(host)
     host.sock.close()
 
-    linkable_hosts -= 1
-
     notice_clients()
 
 
@@ -229,13 +227,12 @@ def unlink(connection_index):
 
     try:
         hosts[host_index].sock.sendall("DISCONNECT|".encode())
+        linkable_hosts += 1
     except OSError:
         # print("Host에게 DISCONNECT 메시지 전송 실패")
         pass
 
     connections[connection_index] = 0
-
-    linkable_hosts += 1
 
     notice_clients()
 
