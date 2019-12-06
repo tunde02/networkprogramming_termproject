@@ -222,15 +222,13 @@ def unlink(connection_index):
     try:
         clnts[clnt_index].sock.sendall("DISCONNECT|".encode())
     except OSError:
-        # print("Client에게 DISCONNECT 메시지 전송 실패")
-        pass
+        print("Client에게 DISCONNECT 메시지 전송 실패")
 
     try:
         hosts[host_index].sock.sendall("DISCONNECT|".encode())
         linkable_hosts += 1
     except OSError:
-        # print("Host에게 DISCONNECT 메시지 전송 실패")
-        pass
+        print("Host에게 DISCONNECT 메시지 전송 실패")
 
     connections[connection_index] = 0
 

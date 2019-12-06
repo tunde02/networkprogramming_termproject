@@ -102,8 +102,6 @@ class MsgReceiver:
             elif msg[0] == "GAME": # 게임 실행
                 if msg[1] == "REMOTE":
                     img_sender = start_remote_control(mouse_simulator)
-                elif msg[1] == "KART":
-                    img_sender = start_kart(mouse_simulator)
                 elif msg[1] == "DONTSTARVE":
                     img_sender = start_dont_starve(mouse_simulator)
                 elif msg[1] == "PORTAL":
@@ -247,48 +245,6 @@ def start_remote_control(mouse_simulator):
 
     mouse_simulator.mouse_controller.position = (0, 0)
     mouse_simulator.set_screen_pos((0, 0))
-
-    return img_sender
-
-
-def start_kart(mouse_simulator):
-    windows = hwndCal.getWindowSizes()
-    # 넥슨 플러그 window를 찾아 카트를 실행
-    for win in windows:
-        if win[2] == "NexonPlug":
-            x = win[1][0] + 300
-            y = win[1][1] + 40
-            mouse_simulator.mouse_controller.position = (x, y)
-            mouse_simulator.mouse_controller.click(mouse.Button.left)
-            break
-
-    # 실행된 게임 window를 찾기
-    game_window = []
-    isFound = False
-    while not isFound:
-        windows = hwndCal.getWindowSizes()
-        for win in windows:
-            if win[2] == "KartRider Client":
-                game_window = win
-                isFound = True
-                break
-        time.sleep(0.3)
-
-    print("KartRider Start")
-
-    screen_x = game_window[1][0]
-    screen_y = game_window[1][1] + 25
-    screen_width = game_window[1][2]
-    screen_height = game_window[1][3]
-
-    # 게임 window의 사이즈를 서버에 전송
-    msg = "SCREENSIZE|" + str(screen_width) + "," + str(screen_height)
-    sock.sendall(msg.encode())
-
-    img_sender = ImgSender(sock, (screen_x, screen_y, screen_x + screen_width, screen_y + screen_height))
-
-    mouse_simulator.mouse_controller.position = (screen_x, screen_y)
-    mouse_simulator.set_screen_pos((screen_x, screen_y))
 
     return img_sender
 

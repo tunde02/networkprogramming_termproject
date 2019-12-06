@@ -272,11 +272,10 @@ def start_list_gui(sock, ip, port):
 
     # game buttons
     list_window.game_btns[0].config(command=lambda: start_game_gui(sock, "REMOTE", list_window, receiver))
-    list_window.game_btns[1].config(command=lambda: start_game_gui(sock, "KART", list_window, receiver))
-    list_window.game_btns[2].config(command=lambda: start_game_gui(sock, "DONTSTARVE", list_window, receiver))
-    list_window.game_btns[3].config(command=lambda: start_game_gui(sock, "PORTAL", list_window, receiver))
-    list_window.game_btns[4].config(command=lambda: start_game_gui(sock, "UNDERTALE", list_window, receiver))
-    list_window.game_btns[5].config(command=lambda: start_game_gui(sock, "DODGE", list_window, receiver))
+    list_window.game_btns[1].config(command=lambda: start_game_gui(sock, "DONTSTARVE", list_window, receiver))
+    list_window.game_btns[2].config(command=lambda: start_game_gui(sock, "PORTAL", list_window, receiver))
+    list_window.game_btns[3].config(command=lambda: start_game_gui(sock, "UNDERTALE", list_window, receiver))
+    list_window.game_btns[4].config(command=lambda: start_game_gui(sock, "DODGE", list_window, receiver))
 
     list_window.start_window()
 
